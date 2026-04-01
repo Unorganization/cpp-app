@@ -70,59 +70,122 @@ Pre-built binaries are published automatically on every tagged release.
 
 ## Building from Source
 
-**Prerequisites:**
-- [CMake](https://cmake.org/download/) ≥ 3.20
-- [vcpkg](https://vcpkg.io) (see setup instructions below)
-- A C++17-capable compiler:
-  - **Windows:** Visual Studio 2022 (MSVC)
-  - **macOS:** Xcode Command Line Tools (`xcode-select --install`)
-  - **Linux:** GCC ≥ 9 (`sudo apt install build-essential`)
+This project uses **Clang** on all platforms and **vcpkg** for dependency management.
+Follow the one-time setup for your platform, then the build steps are identical
+everywhere.
 
-### 1 — Install vcpkg (one-time setup)
+---
 
-vcpkg is the package manager used by this project to provide Boost and any other C++ libraries. Install it once on your machine and point an environment variable at it.
+### Windows
 
-**macOS / Linux:**
-```bash
-git clone https://github.com/microsoft/vcpkg.git ~/vcpkg
-~/vcpkg/bootstrap-vcpkg.sh -disableMetrics
-echo 'export VCPKG_ROOT="$HOME/vcpkg"' >> ~/.bashrc   # or ~/.zshrc on macOS
-source ~/.bashrc
-```
+**One-time setup**
 
-**Windows (PowerShell):**
+1. Install [Visual Studio 2022](https://visualstudio.microsoft.com/) with these
+   workloads/components selected in the installer:
+   - *Desktop development with C++*
+   - *C++ Clang tools for Windows* (individual component — this installs `clang-cl`)
+
+2. Install vcpkg and set the environment variable:
+   ```powershell
+   git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
+   C:\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+   [System.Environment]::SetEnvironmentVariable("VCPKG_ROOT", "C:\vcpkg", "User")
+   $env:VCPKG_ROOT = "C:\vcpkg"   # apply to the current session
+   ```
+
+**Configure and build** (PowerShell)
+
 ```powershell
-git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
-C:\vcpkg\bootstrap-vcpkg.bat -disableMetrics
-[System.Environment]::SetEnvironmentVariable("VCPKG_ROOT", "C:\vcpkg", "User")
-$env:VCPKG_ROOT = "C:\vcpkg"   # apply to the current session
+git clone https://github.com/<your-username>/<your-repo>.git
+cd <your-repo>\cpp-app
+
+cmake -S . -B build `
+  -G "Visual Studio 17 2022" -A x64 -T ClangCL `
+  -DCMAKE_BUILD_TYPE=Release `
+  -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT\scripts\buildsystems\vcpkg.cmake" `
+  -DVCPKG_TARGET_TRIPLET=x64-windows-static
+
+cmake --build build --config Release --parallel
 ```
 
-### 2 — Configure and build
+The binary is at `build\bin\cpp_app.exe`.
+
+---
+
+### macOS
+
+**One-time setup**
+
+1. Install Xcode Command Line Tools (provides Apple Clang):
+   ```bash
+   xcode-select --install
+   ```
+
+2. Install vcpkg and set the environment variable:
+   ```bash
+   git clone https://github.com/microsoft/vcpkg.git ~/vcpkg
+   ~/vcpkg/bootstrap-vcpkg.sh -disableMetrics
+   echo 'export VCPKG_ROOT="$HOME/vcpkg"' >> ~/.zshrc   # or ~/.bashrc
+   source ~/.zshrc
+   ```
+
+**Configure and build**
 
 ```bash
-# Clone the repository
 git clone https://github.com/<your-username>/<your-repo>.git
 cd <your-repo>/cpp-app
 
-# Configure – vcpkg will automatically download and build all dependencies
-# listed in vcpkg.json before CMake configures the project.
 cmake -S . -B build \
   -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 \
   -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
 
-# Windows (PowerShell) – use the static triplet to match the static CRT:
-# cmake -S . -B build -G "Visual Studio 17 2022" -A x64 `
-#   -DCMAKE_BUILD_TYPE=Release `
-#   -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT\scripts\buildsystems\vcpkg.cmake" `
-#   -DVCPKG_TARGET_TRIPLET=x64-windows-static
+cmake --build build --parallel
+```
+
+The binary is at `build/bin/cpp_app`.
+
+---
+
+### Linux (Ubuntu / Debian)
+
+**One-time setup**
+
+1. Install Clang and the supporting build tools:
+   ```bash
+   sudo apt-get update
+   sudo apt-get install -y build-essential clang cmake ninja-build
+   ```
+
+2. Install vcpkg and set the environment variable:
+   ```bash
+   git clone https://github.com/microsoft/vcpkg.git ~/vcpkg
+   ~/vcpkg/bootstrap-vcpkg.sh -disableMetrics
+   echo 'export VCPKG_ROOT="$HOME/vcpkg"' >> ~/.bashrc
+   source ~/.bashrc
+   ```
+
+**Configure and build**
+
+```bash
+git clone https://github.com/<your-username>/<your-repo>.git
+cd <your-repo>/cpp-app
+
+cmake -S . -B build \
+  -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_C_COMPILER=clang \
+  -DCMAKE_CXX_COMPILER=clang++ \
+  -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
 
 cmake --build build --parallel
-
-# The binary is placed in build/bin/
-./build/bin/cpp_app        # Linux / macOS
-build\bin\cpp_app.exe      # Windows
 ```
+
+The binary is at `build/bin/cpp_app`.
+
+> **vcpkg first run:** The first configure will download and compile all dependencies
+> (including Boost) from source. This takes several minutes. Subsequent builds are
+> fast because vcpkg caches the compiled packages.
 
 ---
 
