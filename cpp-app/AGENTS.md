@@ -113,6 +113,29 @@ causes build failures.
 
 ---
 
+## Compiler Requirements
+
+**Clang is required on all platforms.** Do not switch any platform back to a different
+compiler without an explicit decision from the project owner.
+
+| Platform | Compiler | How it is selected |
+|---|---|---|
+| Windows | clang-cl (LLVM frontend, MSVC-compatible) | `-T ClangCL` in the CMake configure step |
+| Linux | Clang (`clang` / `clang++`) | `-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++` |
+| macOS | Apple Clang | Default toolchain on the GitHub runner — no flag needed |
+
+On Windows, clang-cl uses the MSVC linker and runtime, so `/MT` (static CRT) and the
+`x64-windows-static` vcpkg triplet continue to apply unchanged. In CMake, `MSVC` is
+`TRUE` when clang-cl is active — this is expected and correct; the existing `/MT`
+replacement logic relies on it.
+
+On Linux, `build-essential` is still installed alongside `clang` because it provides
+supporting tools (`ar`, `ranlib`, etc.) that the Clang toolchain uses. The
+`-static-libgcc` and `-static-libstdc++` link flags work with Clang on Linux exactly
+as they do with GCC.
+
+---
+
 ## GitHub Actions Workflow Rules
 
 - All four build jobs (Windows, Linux, macOS x86_64, macOS arm64) must remain in sync

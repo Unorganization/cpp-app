@@ -97,8 +97,10 @@ elseif(APPLE)
 
 elseif(UNIX)
     # Linux: statically link libgcc and libstdc++ so the binary runs on any
-    # glibc-based distro from the last ~5 years. glibc itself remains dynamic
-    # because its ABI is stable and a static glibc is not safe to redistribute.
+    # glibc-based distro from the last ~5 years. These flags work with both
+    # Clang (which is required – see the workflow) and GCC.
+    # glibc itself remains dynamic because its ABI is stable and a static
+    # glibc is not safe to redistribute.
     target_link_options(${PROJECT_NAME} PRIVATE
         -static-libgcc
         -static-libstdc++
