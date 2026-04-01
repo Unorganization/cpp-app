@@ -1,0 +1,182 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - "v*.*.*"
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Windows x64 (MSVC + static CRT)
+  # ---------------------------------------------------------------------------
+  build-windows:
+    name: Windows x64
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: >
+          cmake -S . -B build
+          -G "Visual Studio 17 2022"
+          -A x64
+          -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Package
+        run: cmake --build build --config Release --target package
+        working-directory: build
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpp_app-windows-x64
+          path: build/cpp_app-*.zip
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # Linux x64 (GCC, static libgcc/libstdc++)
+  # ---------------------------------------------------------------------------
+  build-linux:
+    name: Linux x64
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            cmake build-essential ninja-build
+
+      - name: Configure CMake
+        run: >
+          cmake -S . -B build
+          -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Package
+        run: cpack --config CPackConfig.cmake -G TGZ
+        working-directory: build
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpp_app-linux-x64
+          path: build/cpp_app-*.tar.gz
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # macOS – Intel x86_64
+  # ---------------------------------------------------------------------------
+  build-macos-x64:
+    name: macOS Intel (x86_64)
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: >
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_OSX_ARCHITECTURES=x86_64
+          -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Package
+        run: cpack --config CPackConfig.cmake -G TGZ
+        working-directory: build
+
+      - name: Rename artifact to include arch
+        run: |
+          cd build
+          for f in cpp_app-*.tar.gz; do
+            mv "$f" "${f%.tar.gz}-x86_64.tar.gz"
+          done
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpp_app-macos-x86_64
+          path: build/cpp_app-*-x86_64.tar.gz
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # macOS – Apple Silicon (arm64)
+  # ---------------------------------------------------------------------------
+  build-macos-arm64:
+    name: macOS Apple Silicon (arm64)
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: >
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_OSX_ARCHITECTURES=arm64
+          -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Package
+        run: cpack --config CPackConfig.cmake -G TGZ
+        working-directory: build
+
+      - name: Rename artifact to include arch
+        run: |
+          cd build
+          for f in cpp_app-*.tar.gz; do
+            mv "$f" "${f%.tar.gz}-arm64.tar.gz"
+          done
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpp_app-macos-arm64
+          path: build/cpp_app-*-arm64.tar.gz
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # Release – only runs when a v*.*.* tag is pushed
+  # ---------------------------------------------------------------------------
+  release:
+    name: Create GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs:
+      - build-windows
+      - build-linux
+      - build-macos-x64
+      - build-macos-arm64
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: List release assets
+        run: ls -lh release-assets/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Release ${{ github.ref_name }}"
+          draft: false
+          prerelease: false
+          files: release-assets/*
+          generate_release_notes: true

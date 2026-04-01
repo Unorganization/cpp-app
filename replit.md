@@ -94,3 +94,23 @@ Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHea
 ### `scripts` (`@workspace/scripts`)
 
 Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.
+
+---
+
+## C++ Cross-Platform Application (`cpp-app/`)
+
+Standalone native C++ console app — lives outside the pnpm workspace, pushed to GitHub separately or from the same repo.
+
+- **Build system:** CMake ≥ 3.20, C++17
+- **Entry point:** `cpp-app/src/main.cpp`
+- **Self-containment strategy:**
+  - Windows (MSVC): static CRT (`/MT`) — zero DLL dependencies
+  - Windows (MinGW): `-static` — bundles libgcc/libstdc++ statically
+  - Linux: `-static-libgcc -static-libstdc++` — only dynamic dep is glibc (stable ABI)
+  - macOS: relies on system-shipped `libSystem`/`libc++` (present on every supported macOS)
+- **GitHub Actions** (`.github/workflows/build.yml`): builds on all platforms on every push/PR; creates a GitHub Release with all four archives when a `v*.*.*` tag is pushed
+  - `cpp_app-<ver>-win64.zip` — Windows x64
+  - `cpp_app-<ver>-Linux.tar.gz` — Linux x64
+  - `cpp_app-<ver>-Darwin-x86_64.tar.gz` — macOS Intel
+  - `cpp_app-<ver>-Darwin-arm64.tar.gz` — macOS Apple Silicon
+- **Releasing:** `git tag v1.0.0 && git push origin v1.0.0`
