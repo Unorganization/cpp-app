@@ -2,6 +2,10 @@
 
 A cross-platform C++ console application that runs on Windows, macOS, and Linux.
 
+> **For AI agents and contributors:** Read [`AGENTS.md`](AGENTS.md) before making any
+> changes. It documents the self-containment design principles that all modifications
+> must maintain.
+
 ---
 
 ## Downloading a Release Binary
