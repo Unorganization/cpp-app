@@ -164,6 +164,51 @@ cmake --build build --parallel
 
 ---
 
+## Adding Source Files (Modules)
+
+CMake does not scan your source folder automatically. Every new `.cpp` file must be
+registered in `CMakeLists.txt` or it will silently not be compiled. Header files
+require no registration — create them anywhere in `src/` and `#include` them as normal.
+
+### Step 1 — Create your files
+
+Place them anywhere inside `src/`. A flat layout works fine for small projects; use
+sub-folders for larger ones.
+
+```
+src/
+├── main.cpp
+├── my_module.cpp   ← new
+└── my_module.h     ← new (no CMake entry needed)
+```
+
+### Step 2 — Register the `.cpp` file in `CMakeLists.txt`
+
+Find the `target_sources` block (just below `add_executable`) and add one line:
+
+```cmake
+target_sources(${PROJECT_NAME} PRIVATE
+    src/main.cpp
+    src/my_module.cpp   ← add this line
+)
+```
+
+Header files (`.h`, `.hpp`) are **not** listed here. CMake finds them automatically
+when your code `#include`s them.
+
+### Step 3 — Rebuild
+
+No need to delete the build folder for this change — CMake detects the updated source
+list on the next build:
+
+```bash
+cmake --build build --parallel
+```
+
+That's all. The new module will be compiled and linked into the executable.
+
+---
+
 ## Adding Boost Libraries
 
 Boost components are managed in two places: `vcpkg.json` (which packages to install) and `CMakeLists.txt` (how to link them). Both files must be updated together.

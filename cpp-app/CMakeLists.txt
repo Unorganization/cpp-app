@@ -28,7 +28,19 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Output the binary directly to the build root for easy packaging
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-add_executable(${PROJECT_NAME} src/main.cpp)
+add_executable(${PROJECT_NAME})
+
+# ---------------------------------------------------------------------------
+# SOURCE FILES
+# Add one line per .cpp file you create. Header files (.h / .hpp) do NOT
+# need to be listed here – just #include them in your .cpp files as normal.
+# CMake does not scan the source folder automatically; every new .cpp must
+# be added below or it will not be compiled.
+# ---------------------------------------------------------------------------
+target_sources(${PROJECT_NAME} PRIVATE
+    src/main.cpp
+    # src/my_module.cpp   ← add new .cpp files here
+)
 
 # ---------------------------------------------------------------------------
 # Boost (managed via vcpkg – see vcpkg.json)
