@@ -126,6 +126,72 @@ build\bin\cpp_app.exe      # Windows
 
 ---
 
+## Renaming the Project and Executable
+
+Three files must be updated together. Replace every occurrence of `cpp_app` (underscores)
+and `cpp-app` (hyphens) with your chosen name. vcpkg requires hyphens and lowercase;
+CMake and the workflow use underscores or whatever casing you prefer.
+
+### 1 — `CMakeLists.txt`
+
+Change the `project()` name, the `add_executable()` target name, and the CPack package
+name. Every subsequent CMake command that references the target (`target_link_libraries`,
+`target_compile_options`, `target_link_options`, `install`) must use the same new name.
+
+```cmake
+# Line 1 – project name (also sets PROJECT_NAME used by CPack below)
+project(my_app   ← change this
+    VERSION 1.0.0
+    ...
+)
+
+# Line 2 – executable target name; this becomes the binary filename on disk
+add_executable(my_app src/main.cpp)   ← change this
+
+# Lines 3+ – every command that references the target must match
+target_link_libraries(my_app PRIVATE Boost::filesystem)   ← change this
+target_compile_options(my_app PRIVATE ...)                 ← change this
+target_link_options(my_app PRIVATE ...)                    ← change this
+install(TARGETS my_app RUNTIME DESTINATION .)              ← change this
+
+# CPack archive name
+set(CPACK_PACKAGE_NAME "my_app")   ← change this
+```
+
+### 2 — `vcpkg.json`
+
+The `"name"` field must be **all lowercase with hyphens** (no underscores — this is a
+vcpkg requirement):
+
+```json
+{
+  "name": "my-app",
+  ...
+}
+```
+
+### 3 — `.github/workflows/build.yml`
+
+Update the artifact `name:` fields and the `path:` glob patterns so the workflow can
+find the archives it just created. There are four build jobs; each has both a `name:`
+and a `path:` that reference the old executable name.
+
+```yaml
+# In each of the four build jobs – change both fields:
+- name: Upload artifact
+  uses: actions/upload-artifact@v4
+  with:
+    name: my_app-windows-x64          ← change (all four jobs)
+    path: build/my_app-*.zip          ← change Windows job
+    path: build/my_app-*.tar.gz       ← change Linux / macOS jobs
+```
+
+After these three edits, rebuild from scratch (`cmake -S . -B build ...`) — CMake will
+create a fresh configuration with the new name and the binary in `build/bin/` will have
+your chosen filename.
+
+---
+
 ## Adding Boost Libraries
 
 Boost components are managed in two places: `vcpkg.json` (which packages to install) and `CMakeLists.txt` (how to link them). Both files must be updated together.
