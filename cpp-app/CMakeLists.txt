@@ -1,5 +1,14 @@
 cmake_minimum_required(VERSION 3.20)
 
+# ---------------------------------------------------------------------------
+# vcpkg triplet – must be set before project() so the toolchain picks it up.
+# On Windows we ask vcpkg for the "static" triplet so that Boost and the CRT
+# are both linked statically (matching the /MT flag below).
+# ---------------------------------------------------------------------------
+if(WIN32)
+    set(VCPKG_TARGET_TRIPLET "x64-windows-static" CACHE STRING "vcpkg triplet")
+endif()
+
 project(cpp_app
     VERSION 1.0.0
     DESCRIPTION "Cross-platform C++ console application"
@@ -16,12 +25,24 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 add_executable(cpp_app src/main.cpp)
 
 # ---------------------------------------------------------------------------
+# Boost (managed via vcpkg – see vcpkg.json)
+#
+# To add more Boost libraries:
+#   1. Add the component name to vcpkg.json  (e.g. "boost-regex")
+#   2. Add the component name to the COMPONENTS list below (e.g. regex)
+#   3. Add Boost::<component> to target_link_libraries below
+# ---------------------------------------------------------------------------
+find_package(Boost REQUIRED COMPONENTS filesystem)
+target_link_libraries(cpp_app PRIVATE Boost::filesystem)
+
+# ---------------------------------------------------------------------------
 # Platform-specific link flags to maximise self-containment
 # ---------------------------------------------------------------------------
 
 if(WIN32)
-    # On Windows (MSVC or MinGW) the CRT is usually linked statically.
-    # With MSVC: switch from /MD (DLL CRT) to /MT (static CRT).
+    # On Windows (MSVC) switch from /MD (DLL CRT) to /MT (static CRT).
+    # vcpkg is configured above to use x64-windows-static so Boost is also
+    # built with /MT – the two must always match.
     if(MSVC)
         foreach(flag_var
             CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
@@ -30,26 +51,20 @@ if(WIN32)
         endforeach()
     endif()
 
-    # With MinGW (used by GitHub-hosted Windows runners via msys2 or the
-    # native toolchain) we can pass -static to pull in libgcc and libstdc++.
+    # With MinGW we can pass -static to pull in libgcc and libstdc++.
     if(MINGW)
         target_link_options(cpp_app PRIVATE -static)
     endif()
 
 elseif(APPLE)
-    # macOS: the only safe shared libs to rely on are the OS-shipped dylibs
-    # (libSystem, libc++).  Those ship with every supported macOS version and
-    # do NOT need to be bundled.  There is nothing extra to do here.
-    # We intentionally do NOT pass -static because static linking of libc++ on
-    # Apple Silicon requires an additional toolchain setup that is fragile.
+    # macOS: rely on the OS-shipped libSystem / libc++ (present on every
+    # supported macOS version). -dead_strip removes unused code.
     target_link_options(cpp_app PRIVATE "LINKER:-dead_strip")
 
 elseif(UNIX)
     # Linux: statically link libgcc and libstdc++ so the binary runs on any
-    # glibc-based distro from the last ~5 years without requiring those
-    # packages to be installed.  We do NOT statically link glibc itself
-    # because a statically linked glibc is not safe to redistribute and the
-    # dynamic glibc ABI is stable and backward compatible.
+    # glibc-based distro from the last ~5 years. glibc itself remains dynamic
+    # because its ABI is stable and a static glibc is not safe to redistribute.
     target_link_options(cpp_app PRIVATE
         -static-libgcc
         -static-libstdc++

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <boost/filesystem.hpp>
 
 int main(int argc, char* argv[]) {
     std::cout << "Hello from the cross-platform C++ app!" << std::endl;
@@ -16,6 +17,10 @@ int main(int argc, char* argv[]) {
 #endif
 
     std::cout << std::endl;
+
+    // Example: use Boost.Filesystem to print the working directory
+    boost::filesystem::path cwd = boost::filesystem::current_path();
+    std::cout << "Working directory: " << cwd.string() << std::endl;
 
     if (argc > 1) {
         std::cout << "Arguments received:" << std::endl;
