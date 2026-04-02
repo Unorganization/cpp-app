@@ -264,8 +264,11 @@ jobs:
       - name: Build
         run: cmake --build build --parallel
 
-      # Note: Tests are skipped for Android on x86 runners as they would require
-      # an ARM64 emulator to execute.
+      # Tests are skipped for Android: the binary targets Android's Bionic ABI
+      # and cannot execute on a standard Linux runner regardless of architecture.
+      # Options for real test execution: Android emulator via
+      # reactivecircus/android-emulator-runner (slow, x86_64 images only) or
+      # a self-hosted runner with a physical device connected via adb.
 
       - name: Package
         run: cpack --config CPackConfig.cmake -G TGZ
