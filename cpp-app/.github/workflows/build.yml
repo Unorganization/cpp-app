@@ -38,6 +38,9 @@ jobs:
       - name: Build
         run: cmake --build build --config Release --parallel
 
+      - name: Run tests
+        run: ctest --test-dir build -C Release --output-on-failure
+
       - name: Package
         run: cmake --build build --config Release --target package
         working-directory: build
@@ -80,6 +83,9 @@ jobs:
       - name: Build
         run: cmake --build build --parallel
 
+      - name: Run tests
+        run: ctest --test-dir build --output-on-failure
+
       - name: Package
         run: cpack --config CPackConfig.cmake -G TGZ
         working-directory: build
@@ -113,6 +119,9 @@ jobs:
 
       - name: Build
         run: cmake --build build --parallel
+
+      - name: Run tests
+        run: ctest --test-dir build --output-on-failure
 
       - name: Package
         run: cpack --config CPackConfig.cmake -G TGZ
@@ -154,6 +163,9 @@ jobs:
 
       - name: Build
         run: cmake --build build --parallel
+
+      - name: Run tests
+        run: ctest --test-dir build --output-on-failure
 
       - name: Package
         run: cpack --config CPackConfig.cmake -G TGZ
