@@ -115,13 +115,17 @@ everywhere.
 Detect: `git --version`
 Install: Download from https://git-scm.com/download/win or `winget install Git.Git`
 
-**Visual Studio 2022**
-Detect: `clang-cl --version` — if this works, the required VS components are present.
-Install: Download [Visual Studio 2022](https://visualstudio.microsoft.com/) and select during install:
+**Visual Studio 2022 or Build Tools for Visual Studio 2022**
+Detect: `clang-cl --version` — if this works, the required components are already present.
+Install — choose one:
+- **Full IDE:** Download [Visual Studio 2022](https://visualstudio.microsoft.com/) — includes the editor, debugger, and all build tools.
+- **Build tools only (no IDE):** Download [Build Tools for Visual Studio 2022](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022) — smaller (~2–3 GB), no editor, suitable if you use VS Code or another editor.
+
+Either way, run the installer and select:
 - Workload: *Desktop development with C++*
 - Individual component: *C++ Clang tools for Windows* (installs `clang-cl` and `llvm-objcopy`)
 
-> **Note:** CMake is bundled with Visual Studio — no separate CMake install needed.
+> **Note:** CMake is bundled with both installers — no separate CMake install needed.
 
 **vcpkg**
 Detect: `echo $env:VCPKG_ROOT` (PowerShell) — if this prints a path, vcpkg is configured.
