@@ -112,39 +112,38 @@ everywhere.
 **One-time setup**
 
 **Git**
-Detect: `git --version`
-Install: Download from https://git-scm.com/download/win or `winget install Git.Git`
+- Detect: `git --version`
+- Install: Download from https://git-scm.com/download/win or `winget install Git.Git`
 
 **Visual Studio 2022 or Build Tools for Visual Studio 2022**
-Detect: `clang-cl --version` — if this works, the required components are already present.
-Install — choose one:
-- **Full IDE:** Download [Visual Studio 2022](https://visualstudio.microsoft.com/) — includes the editor, debugger, and all build tools.
-- **Build tools only (no IDE):** Download [Build Tools for Visual Studio 2022](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022) — smaller (~2–3 GB), no editor, suitable if you use VS Code or another editor.
-
-Either way, run the installer and select:
-- Workload: *Desktop development with C++*
-- Individual component: *C++ Clang tools for Windows* (installs `clang-cl` and `llvm-objcopy`)
+- Detect: `clang-cl --version` — if this works, the required components are already present.
+- Install — choose one:
+  - **Full IDE:** Download [Visual Studio 2022](https://visualstudio.microsoft.com/) — includes the editor, debugger, and all build tools.
+  - **Build tools only (no IDE):** Download [Build Tools for Visual Studio 2022](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022) — smaller (~2–3 GB), no editor, suitable if you use VS Code or another editor.
+- Either way, run the installer and select:
+  - Workload: *Desktop development with C++*
+  - Individual component: *C++ Clang tools for Windows* (installs `clang-cl` and `llvm-objcopy`)
 
 > **Note:** CMake is bundled with both installers — no separate CMake install needed.
 
 **vcpkg**
-Detect: `echo $env:VCPKG_ROOT` (PowerShell) — if this prints a path, vcpkg is configured.
-Also check: `vcpkg version`
-Install:
-```powershell
-git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
-C:\vcpkg\bootstrap-vcpkg.bat -disableMetrics
-[System.Environment]::SetEnvironmentVariable("VCPKG_ROOT", "C:\vcpkg", "User")
-$env:VCPKG_ROOT = "C:\vcpkg"
-```
+- Detect: `echo $env:VCPKG_ROOT` (PowerShell) — if this prints a path, vcpkg is configured.
+- Also check: `vcpkg version`
+- Install:
+  ```powershell
+  git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
+  C:\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+  [System.Environment]::SetEnvironmentVariable("VCPKG_ROOT", "C:\vcpkg", "User")
+  $env:VCPKG_ROOT = "C:\vcpkg"
+  ```
 
 **Node.js** *(optional — only needed for WebAssembly smoke testing)*
-Detect: `node --version`
-Install: Download from https://nodejs.org or `winget install OpenJS.NodeJS`
+- Detect: `node --version`
+- Install: Download from https://nodejs.org or `winget install OpenJS.NodeJS`
 
 **ast-grep** *(optional — recommended for code search and refactoring)*
-Detect: `sg --version`
-Install: `npm install -g @ast-grep/cli` (requires Node.js)
+- Detect: `sg --version`
+- Install: `npm install -g @ast-grep/cli` (requires Node.js)
 
 **Configure and build** (PowerShell)
 
@@ -175,40 +174,40 @@ ctest --test-dir build -C Release --output-on-failure
 
 **One-time setup**
 
-**Xcode Command Line Tools** (provides Apple Clang, git, make)
-Detect: `xcode-select -p` — prints the active developer directory if installed.
-Also check: `clang --version`
-Install: `xcode-select --install`
+**Xcode Command Line Tools** *(provides Apple Clang, git, make)*
+- Detect: `xcode-select -p` — prints the active developer directory if installed.
+- Also check: `clang --version`
+- Install: `xcode-select --install`
 
 **Homebrew**
-Detect: `brew --version`
-Install: `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
+- Detect: `brew --version`
+- Install: `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
 
-**LLVM tools** (provides `llvm-objcopy`, required for embedded resource build)
-Detect: `llvm-objcopy --version` or `$(brew --prefix llvm)/bin/llvm-objcopy --version`
-Install: `brew install llvm`
+**LLVM tools** *(provides `llvm-objcopy`, required for embedded resource build)*
+- Detect: `llvm-objcopy --version` or `$(brew --prefix llvm)/bin/llvm-objcopy --version`
+- Install: `brew install llvm`
 
 > **Note:** Homebrew installs LLVM to a versioned prefix. The tools are accessible as
 > `$(brew --prefix llvm)/bin/llvm-objcopy`. CMake finds them automatically.
 
 **vcpkg**
-Detect: `echo $VCPKG_ROOT` — if this prints a path, vcpkg is configured.
-Also check: `vcpkg version`
-Install:
-```bash
-git clone https://github.com/microsoft/vcpkg.git ~/vcpkg
-~/vcpkg/bootstrap-vcpkg.sh -disableMetrics
-echo 'export VCPKG_ROOT="$HOME/vcpkg"' >> ~/.zshrc   # or ~/.bashrc
-source ~/.zshrc
-```
+- Detect: `echo $VCPKG_ROOT` — if this prints a path, vcpkg is configured.
+- Also check: `vcpkg version`
+- Install:
+  ```bash
+  git clone https://github.com/microsoft/vcpkg.git ~/vcpkg
+  ~/vcpkg/bootstrap-vcpkg.sh -disableMetrics
+  echo 'export VCPKG_ROOT="$HOME/vcpkg"' >> ~/.zshrc   # or ~/.bashrc
+  source ~/.zshrc
+  ```
 
 **Node.js** *(optional — only needed for WebAssembly smoke testing)*
-Detect: `node --version`
-Install: `brew install node`
+- Detect: `node --version`
+- Install: `brew install node`
 
 **ast-grep** *(optional — recommended for code search and refactoring)*
-Detect: `sg --version`
-Install: `brew install ast-grep`
+- Detect: `sg --version`
+- Install: `brew install ast-grep`
 
 **Configure and build**
 
@@ -239,44 +238,43 @@ ctest --test-dir build --output-on-failure
 **One-time setup**
 
 **Git**
-Detect: `git --version`
-Install: `sudo apt-get install -y git`
+- Detect: `git --version`
+- Install: `sudo apt-get install -y git`
 
-**Build tools + Clang + LLVM** (one command installs all)
-Detect each individually:
-- `clang --version`
-- `llvm-objcopy --version`
-- `cmake --version`
-- `ninja --version`
-
-Install all at once:
-```bash
-sudo apt-get update
-sudo apt-get install -y build-essential clang llvm cmake ninja-build
-```
+**Build tools + Clang + LLVM** *(one command installs all)*
+- Detect each individually:
+  - `clang --version`
+  - `llvm-objcopy --version`
+  - `cmake --version`
+  - `ninja --version`
+- Install:
+  ```bash
+  sudo apt-get update
+  sudo apt-get install -y build-essential clang llvm cmake ninja-build
+  ```
 
 **vcpkg**
-Detect: `echo $VCPKG_ROOT` — if this prints a path, vcpkg is configured.
-Also check: `vcpkg version`
-Install:
-```bash
-git clone https://github.com/microsoft/vcpkg.git ~/vcpkg
-~/vcpkg/bootstrap-vcpkg.sh -disableMetrics
-echo 'export VCPKG_ROOT="$HOME/vcpkg"' >> ~/.bashrc
-source ~/.bashrc
-```
+- Detect: `echo $VCPKG_ROOT` — if this prints a path, vcpkg is configured.
+- Also check: `vcpkg version`
+- Install:
+  ```bash
+  git clone https://github.com/microsoft/vcpkg.git ~/vcpkg
+  ~/vcpkg/bootstrap-vcpkg.sh -disableMetrics
+  echo 'export VCPKG_ROOT="$HOME/vcpkg"' >> ~/.bashrc
+  source ~/.bashrc
+  ```
 
 **Node.js** *(optional — only needed for WebAssembly smoke testing)*
-Detect: `node --version`
-Install: `sudo apt-get install -y nodejs`
+- Detect: `node --version`
+- Install: `sudo apt-get install -y nodejs`
 
 **wine64** *(optional — to run the Wine compatibility test locally)*
-Detect: `wine64 --version`
-Install: `sudo apt-get install -y wine64`
+- Detect: `wine64 --version`
+- Install: `sudo apt-get install -y wine64`
 
 **ast-grep** *(optional — recommended for code search and refactoring)*
-Detect: `sg --version`
-Install: `npm install -g @ast-grep/cli` (requires Node.js) or `cargo install ast-grep` (requires Rust)
+- Detect: `sg --version`
+- Install: `npm install -g @ast-grep/cli` (requires Node.js) or `cargo install ast-grep` (requires Rust)
 
 **Configure and build**
 
@@ -309,20 +307,20 @@ ctest --test-dir build --output-on-failure
 **One-time setup**
 
 **Build tools**
-Detect each: `git --version`, `cmake --version`, `clang --version`, `ninja --version`
-Install: `pkg update && pkg install -y git cmake clang ninja python`
+- Detect each: `git --version`, `cmake --version`, `clang --version`, `ninja --version`
+- Install: `pkg update && pkg install -y git cmake clang ninja python`
 
 **vcpkg**
-Detect: `echo $VCPKG_ROOT`
-Install:
-```bash
-git clone https://github.com/microsoft/vcpkg.git ~/vcpkg
-~/vcpkg/bootstrap-vcpkg.sh -disableMetrics -useSystemBinaries
-export VCPKG_ROOT="$HOME/vcpkg"
-export VCPKG_FORCE_SYSTEM_BINARIES=1
-echo 'export VCPKG_ROOT="$HOME/vcpkg"' >> ~/.bashrc
-echo 'export VCPKG_FORCE_SYSTEM_BINARIES=1' >> ~/.bashrc
-```
+- Detect: `echo $VCPKG_ROOT`
+- Install:
+  ```bash
+  git clone https://github.com/microsoft/vcpkg.git ~/vcpkg
+  ~/vcpkg/bootstrap-vcpkg.sh -disableMetrics -useSystemBinaries
+  export VCPKG_ROOT="$HOME/vcpkg"
+  export VCPKG_FORCE_SYSTEM_BINARIES=1
+  echo 'export VCPKG_ROOT="$HOME/vcpkg"' >> ~/.bashrc
+  echo 'export VCPKG_FORCE_SYSTEM_BINARIES=1' >> ~/.bashrc
+  ```
 
 **Configure and build**
 

@@ -37,7 +37,8 @@ Before every commit, run through the following mentally:
 The single most important rule in this codebase is that **every release binary must be
 as self-contained as possible**. See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the
 detailed technical rationale behind this principle.
- End-users should be able to download a release archive,
+
+End-users should be able to download a release archive,
 extract it, and run the executable without installing any additional software, libraries,
 or runtimes.
 
