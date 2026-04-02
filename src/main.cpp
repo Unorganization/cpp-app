@@ -6,12 +6,12 @@
 //   2. Boost.JSON            – parse, inspect, and serialize JSON
 //   3. Boost.Asio            – async timer (event-loop / io_context pattern)
 //   4. Boost.Beast           – synchronous HTTP GET over plain TCP
-//   5. std::filesystem       – enumerate files in the working directory
-//   6. std::regex            – search for an IP address pattern in a string
-//   7. std::thread / future  – background task with std::async
-//   8. FP (std::transform /  – map, filter, reduce over a vector
-//          std::copy_if /
-//          std::reduce)
+//   5. filesystem       – enumerate files in the working directory
+//   6. regex            – search for an IP address pattern in a string
+//   7. thread / future  – background task with async
+//   8. FP (transform /  – map, filter, reduce over a vector
+//          copy_if /
+//          reduce)
 //   9. Embedded resource     – binary file linked into the executable at build
 //                              time via llvm-objcopy; accessed through linker
 //                              symbols with no file I/O at runtime
@@ -60,7 +60,9 @@
 #include "embedded_resource.h"
 #include "logger.h"
 
-namespace fs  = std::filesystem;
+using namespace std;
+
+namespace fs  = filesystem;
 namespace po  = boost::program_options;
 namespace net = boost::asio;
 using     tcp = net::ip::tcp;
@@ -75,7 +77,7 @@ static po::variables_map parse_options(int argc, char* argv[]) {
     po::options_description desc("Options");
     desc.add_options()
         ("help,h",  "show this help message")
-        ("host",    po::value<std::string>()->default_value("localhost"),
+        ("host",    po::value<string>()->default_value("localhost"),
                     "server hostname")
         ("port,p",  po::value<int>()->default_value(8080),
                     "server port");
@@ -85,8 +87,8 @@ static po::variables_map parse_options(int argc, char* argv[]) {
     po::notify(vm);
 
     if (vm.count("help")) {
-        std::cout << desc << "\n";
-        std::exit(0);
+        cout << desc << "\n";
+        exit(0);
     }
     return vm;
 }
@@ -95,10 +97,10 @@ static po::variables_map parse_options(int argc, char* argv[]) {
 // 2. Boost.JSON
 // -----------------------------------------------------------------------------
 static void demo_json() {
-    std::cout << "\n--- Boost.JSON ---\n";
+    cout << "\n--- Boost.JSON ---\n";
 
     // Parse
-    const std::string raw = R"({
+    const string raw = R"({
         "service": "example-api",
         "version": 3,
         "features": ["async", "json", "http"]
@@ -106,33 +108,33 @@ static void demo_json() {
     json::value doc = json::parse(raw);
     const json::object& obj = doc.as_object();
 
-    std::cout << "service : " << obj.at("service").as_string() << "\n";
-    std::cout << "version : " << obj.at("version").as_int64()  << "\n";
-    std::cout << "features: ";
+    cout << "service : " << obj.at("service").as_string() << "\n";
+    cout << "version : " << obj.at("version").as_int64()  << "\n";
+    cout << "features: ";
     for (const auto& f : obj.at("features").as_array()) {
-        std::cout << f.as_string() << " ";
+        cout << f.as_string() << " ";
     }
-    std::cout << "\n";
+    cout << "\n";
 
     // Serialize
     json::object response;
     response["status"] = "ok";
     response["result"] = add(6, 7);     // calls production code from math_utils
-    std::cout << "serialized: " << json::serialize(response) << "\n";
+    cout << "serialized: " << json::serialize(response) << "\n";
 }
 
 // -----------------------------------------------------------------------------
 // 3. Boost.Asio – async timer
 // -----------------------------------------------------------------------------
 static void demo_asio_timer() {
-    std::cout << "\n--- Boost.Asio: async timer ---\n";
+    cout << "\n--- Boost.Asio: async timer ---\n";
 
     net::io_context ioc;
-    net::steady_timer timer(ioc, std::chrono::milliseconds(200));
+    net::steady_timer timer(ioc, chrono::milliseconds(200));
 
     timer.async_wait([](const boost::system::error_code& ec) {
         if (!ec) {
-            std::cout << "timer fired (200 ms)\n";
+            cout << "timer fired (200 ms)\n";
         }
     });
 
@@ -145,7 +147,7 @@ static void demo_asio_timer() {
 // -----------------------------------------------------------------------------
 #ifndef __EMSCRIPTEN__
 static void demo_beast_http() {
-    std::cout << "\n--- Boost.Beast: HTTP GET example.com ---\n";
+    cout << "\n--- Boost.Beast: HTTP GET example.com ---\n";
     try {
         net::io_context ioc;
         tcp::resolver   resolver(ioc);
@@ -166,85 +168,85 @@ static void demo_beast_http() {
         http::response<http::dynamic_body>  res;
         http::read(stream, buf, res);
 
-        std::cout << "status : " << res.result_int() << " " << res.reason() << "\n";
-        std::cout << "body   : "
+        cout << "status : " << res.result_int() << " " << res.reason() << "\n";
+        cout << "body   : "
                   << beast::buffers_to_string(res.body().data()).size()
                   << " bytes\n";
 
         beast::error_code ec;
         stream.socket().shutdown(tcp::socket::shutdown_both, ec);
 
-    } catch (const std::exception& e) {
-        std::cout << "skipped (no network or DNS): " << e.what() << "\n";
+    } catch (const exception& e) {
+        cout << "skipped (no network or DNS): " << e.what() << "\n";
     }
 }
 #endif // !__EMSCRIPTEN__
 
 // -----------------------------------------------------------------------------
-// 5. std::filesystem
+// 5. filesystem
 // -----------------------------------------------------------------------------
 static void demo_filesystem() {
-    std::cout << "\n--- std::filesystem ---\n";
+    cout << "\n--- filesystem ---\n";
 
     const fs::path cwd = fs::current_path();
-    std::cout << "working directory: " << cwd << "\n";
-    std::cout << "contents:\n";
+    cout << "working directory: " << cwd << "\n";
+    cout << "contents:\n";
 
-    std::error_code ec;
+    error_code ec;
     for (const auto& entry : fs::directory_iterator(cwd, ec)) {
         const char* kind = entry.is_directory() ? "DIR " : "FILE";
-        std::cout << "  [" << kind << "] "
+        cout << "  [" << kind << "] "
                   << entry.path().filename().string() << "\n";
     }
 }
 
 // -----------------------------------------------------------------------------
-// 6. std::regex
+// 6. regex
 // -----------------------------------------------------------------------------
 static void demo_regex() {
-    std::cout << "\n--- std::regex ---\n";
+    cout << "\n--- regex ---\n";
 
-    const std::string text = "connect to 192.168.1.100 on port 8080";
-    const std::regex  ip_pattern(R"(\d{1,3}(?:\.\d{1,3}){3})");
+    const string text = "connect to 192.168.1.100 on port 8080";
+    const regex  ip_pattern(R"(\d{1,3}(?:\.\d{1,3}){3})");
 
-    std::smatch m;
-    if (std::regex_search(text, m, ip_pattern)) {
-        std::cout << "found IP address: " << m[0] << "\n";
+    smatch m;
+    if (regex_search(text, m, ip_pattern)) {
+        cout << "found IP address: " << m[0] << "\n";
     }
 
     // Iterate over all matches
-    auto begin = std::sregex_iterator(text.begin(), text.end(),
-                                      std::regex(R"(\d+)"));
-    auto end   = std::sregex_iterator{};
-    std::cout << "all numbers in text: ";
+    auto begin = sregex_iterator(text.begin(), text.end(),
+                                      regex(R"(\d+)"));
+    auto end   = sregex_iterator{};
+    cout << "all numbers in text: ";
     for (auto it = begin; it != end; ++it) {
-        std::cout << (*it)[0] << " ";
+        cout << (*it)[0] << " ";
     }
-    std::cout << "\n";
+    cout << "\n";
 }
 
 // -----------------------------------------------------------------------------
-// 7. std::thread / std::future  (skipped on WebAssembly: no pthreads by default)
+// 7. thread / future  (skipped on WebAssembly: no pthreads by default)
 // -----------------------------------------------------------------------------
 #ifndef __EMSCRIPTEN__
 static void demo_thread_future() {
-    std::cout << "\n--- std::thread / std::future ---\n";
+    cout << "\n--- thread / future ---\n";
 
-    // std::async fires the lambda on a thread-pool thread
-    auto fut = std::async(std::launch::async, []() -> int {
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    // async fires the lambda on a thread-pool thread
+    auto fut = async(launch::async, []() -> int {
+        this_thread::sleep_for(chrono::milliseconds(50));
         return add(100, 200);   // calls production code
     });
 
     // Do other work here while the async task runs ...
-    std::cout << "waiting for async result...\n";
+    cout << "waiting for async result...\n";
 
-    std::cout << "async result: " << fut.get() << "\n";
+    cout << "async result: " << fut.get() << "\n";
 
-    // Explicit std::thread example
-    std::thread t([]() {
-        std::cout << "background thread id: "
-                  << std::this_thread::get_id() << "\n";
+    // Explicit thread example
+    thread t([]() {
+        cout << "background thread id: "
+                  << this_thread::get_id() << "\n";
     });
     t.join();
 }
@@ -254,87 +256,87 @@ static void demo_thread_future() {
 // 8. FP – map / filter / reduce
 // -----------------------------------------------------------------------------
 static void demo_fp() {
-    std::cout << "\n--- FP: map / filter / reduce ---\n";
+    cout << "\n--- FP: map / filter / reduce ---\n";
 
-    const std::vector<int> numbers = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    const vector<int> numbers = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
     // map: square every element
-    std::vector<int> squared;
+    vector<int> squared;
     squared.reserve(numbers.size());
-    std::transform(numbers.begin(), numbers.end(),
-                   std::back_inserter(squared),
+    transform(numbers.begin(), numbers.end(),
+                   back_inserter(squared),
                    [](int n) { return n * n; });
 
-    std::cout << "squared: ";
-    for (int n : squared) { std::cout << n << " "; }
-    std::cout << "\n";
+    cout << "squared: ";
+    for (int n : squared) { cout << n << " "; }
+    cout << "\n";
 
     // filter: keep only even numbers
-    std::vector<int> evens;
-    std::copy_if(numbers.begin(), numbers.end(),
-                 std::back_inserter(evens),
+    vector<int> evens;
+    copy_if(numbers.begin(), numbers.end(),
+                 back_inserter(evens),
                  [](int n) { return n % 2 == 0; });
 
-    std::cout << "evens  : ";
-    for (int n : evens) { std::cout << n << " "; }
-    std::cout << "\n";
+    cout << "evens  : ";
+    for (int n : evens) { cout << n << " "; }
+    cout << "\n";
 
-    // reduce: sum all elements (std::reduce is C++17, supports parallel policy)
-    const int total = std::reduce(numbers.begin(), numbers.end(), 0);
-    std::cout << "sum    : " << total << "\n";
+    // reduce: sum all elements (reduce is C++17, supports parallel policy)
+    const int total = reduce(numbers.begin(), numbers.end(), 0);
+    cout << "sum    : " << total << "\n";
 
     // chained: sum of squares of even numbers
-    std::vector<int> even_squares;
-    std::copy_if(squared.begin(), squared.end(),
-                 std::back_inserter(even_squares),
+    vector<int> even_squares;
+    copy_if(squared.begin(), squared.end(),
+                 back_inserter(even_squares),
                  [](int n) {
-                     const int root = static_cast<int>(std::sqrt(n));
+                     const int root = static_cast<int>(sqrt(n));
                      return root * root == n && root % 2 == 0;
                  });
-    const int even_square_sum = std::reduce(even_squares.begin(),
+    const int even_square_sum = reduce(even_squares.begin(),
                                             even_squares.end(), 0);
-    std::cout << "sum of squares of evens: " << even_square_sum << "\n";
+    cout << "sum of squares of evens: " << even_square_sum << "\n";
 }
 
 // -----------------------------------------------------------------------------
 // 9. Embedded resource – binary file linked in at build time via llvm-objcopy
 // -----------------------------------------------------------------------------
 static void demo_embedded_resource() {
-    std::cout << "\n--- Embedded resource (llvm-objcopy, no file I/O) ---\n";
+    cout << "\n--- Embedded resource (llvm-objcopy, no file I/O) ---\n";
 
     // get_embedded_sample_json() returns a string_view directly into the
     // executable's read-only data segment – no heap allocation, no file open.
-    const std::string_view raw = get_embedded_sample_json();
-    std::cout << "embedded size  : " << raw.size() << " bytes\n";
+    const string_view raw = get_embedded_sample_json();
+    cout << "embedded size  : " << raw.size() << " bytes\n";
 
     // Parse the embedded bytes as JSON using Boost.JSON (already linked in).
     const json::value  doc = json::parse(raw);
     const json::object& obj = doc.as_object();
 
-    std::cout << "application    : " << obj.at("application").as_string() << "\n";
-    std::cout << "description    : " << obj.at("description").as_string() << "\n";
+    cout << "application    : " << obj.at("application").as_string() << "\n";
+    cout << "description    : " << obj.at("description").as_string() << "\n";
 
     const json::array& features =
         obj.at("settings").as_object().at("features").as_array();
-    std::cout << "features       : ";
+    cout << "features       : ";
     for (const auto& f : features) {
-        std::cout << f.as_string() << " ";
+        cout << f.as_string() << " ";
     }
-    std::cout << "\n";
+    cout << "\n";
 }
 
 // -----------------------------------------------------------------------------
 // 10. spdlog – structured logging with multiple sinks and log rotation
 // -----------------------------------------------------------------------------
 static void demo_spdlog() {
-    std::cout << "\n--- spdlog: structured logging + rotating file sink ---\n";
+    cout << "\n--- spdlog: structured logging + rotating file sink ---\n";
 
     // Write logs to a temp subdirectory so the demo works from any cwd.
     const fs::path log_dir = fs::temp_directory_path() / "cpp_app_demo_logs";
     auto log = setup_logger(log_dir);
 
-    std::cout << "log directory  : " << log_dir.string() << "\n";
-    std::cout << "rotation policy: 5 MB max per file, 3 files kept\n\n";
+    cout << "log directory  : " << log_dir.string() << "\n";
+    cout << "rotation policy: 5 MB max per file, 3 files kept\n\n";
 
     // All four severity levels.  The pattern written to both sinks is:
     //   [2026-04-02 09:00:00.123] [INFO ]  message
@@ -351,53 +353,53 @@ static void demo_spdlog() {
 // 11. Boost.URL – parse, inspect, and mutate URIs
 // -----------------------------------------------------------------------------
 static void demo_boost_url() {
-    std::cout << "\n--- Boost.URL ---\n";
+    cout << "\n--- Boost.URL ---\n";
     namespace urls = boost::urls;
 
     // Parse to an immutable view (zero-copy; input string must remain alive)
     const urls::url_view uv = urls::parse_uri(
         "https://api.example.com:8443/v2/users?page=1&limit=50#results").value();
 
-    std::cout << "scheme   : " << uv.scheme()   << "\n";
-    std::cout << "host     : " << uv.host()     << "\n";
-    std::cout << "port     : " << uv.port()     << "\n";
-    std::cout << "path     : " << uv.path()     << "\n";
-    std::cout << "query    : " << uv.query()    << "\n";
-    std::cout << "fragment : " << uv.fragment() << "\n";
+    cout << "scheme   : " << uv.scheme()   << "\n";
+    cout << "host     : " << uv.host()     << "\n";
+    cout << "port     : " << uv.port()     << "\n";
+    cout << "path     : " << uv.path()     << "\n";
+    cout << "query    : " << uv.query()    << "\n";
+    cout << "fragment : " << uv.fragment() << "\n";
 
     // Mutable url for building / modifying
     urls::url u(uv);
     u.set_path("/v3/users");
     u.set_query("page=2&limit=25");
-    std::cout << "modified : " << u << "\n";
+    cout << "modified : " << u << "\n";
 }
 
 // -----------------------------------------------------------------------------
 // 12. Boost.UUID – random (v4) and name-based (v5) UUIDs
 // -----------------------------------------------------------------------------
 static void demo_boost_uuid() {
-    std::cout << "\n--- Boost.UUID ---\n";
+    cout << "\n--- Boost.UUID ---\n";
 
     // v4: cryptographically random
     boost::uuids::random_generator rgen;
     const auto id1 = rgen();
     const auto id2 = rgen();
-    std::cout << "random uuid 1  : " << id1 << "\n";
-    std::cout << "random uuid 2  : " << id2 << "\n";
-    std::cout << "are equal      : " << (id1 == id2 ? "yes" : "no") << "\n";
+    cout << "random uuid 1  : " << id1 << "\n";
+    cout << "random uuid 2  : " << id2 << "\n";
+    cout << "are equal      : " << (id1 == id2 ? "yes" : "no") << "\n";
 
     // v5: name-based (SHA-1) – identical input always yields identical UUID
     boost::uuids::name_generator_sha1 ngen(boost::uuids::ns::url());
     const auto id3 = ngen("https://example.com");
     const auto id4 = ngen("https://example.com");
-    std::cout << "name-based     : " << id3 << "\n";
-    std::cout << "reproducible   : " << (id3 == id4 ? "yes" : "no") << "\n";
+    cout << "name-based     : " << id3 << "\n";
+    cout << "reproducible   : " << (id3 == id4 ? "yes" : "no") << "\n";
 
     // String round-trip
-    const std::string str = boost::uuids::to_string(id1);
+    const string str = boost::uuids::to_string(id1);
     const auto        id5 = boost::uuids::string_generator()(str);
-    std::cout << "string form    : " << str << "\n";
-    std::cout << "round-trip ok  : " << (id1 == id5 ? "yes" : "no") << "\n";
+    cout << "string form    : " << str << "\n";
+    cout << "round-trip ok  : " << (id1 == id5 ? "yes" : "no") << "\n";
 }
 
 // -----------------------------------------------------------------------------
@@ -405,16 +407,16 @@ static void demo_boost_uuid() {
 // -----------------------------------------------------------------------------
 #ifndef __EMSCRIPTEN__
 static void demo_boost_process() {
-    std::cout << "\n--- Boost.Process v2 ---\n";
+    cout << "\n--- Boost.Process v2 ---\n";
     namespace bp = boost::process::v2;
 
     // cmake must be installed on any machine that can build this project.
     const auto cmake_exe = bp::environment::find_executable("cmake");
     if (cmake_exe.empty()) {
-        std::cout << "cmake not found in PATH; skipping\n";
+        cout << "cmake not found in PATH; skipping\n";
         return;
     }
-    std::cout << "cmake path     : " << cmake_exe.string() << "\n";
+    cout << "cmake path     : " << cmake_exe.string() << "\n";
 
     net::io_context ioc;
     boost::asio::readable_pipe rp{ioc};
@@ -426,7 +428,7 @@ static void demo_boost_process() {
     bp::process proc(ioc, cmake_exe, {"--version"}, stdio);
 
     // Synchronous read until the child closes its end of the pipe (EOF).
-    std::string output;
+    string output;
     boost::system::error_code ec;
     boost::asio::read(rp, boost::asio::dynamic_buffer(output), ec);
     // ec == boost::asio::error::eof here – expected, not an error.
@@ -435,10 +437,10 @@ static void demo_boost_process() {
 
     // Print only the first line ("cmake version X.Y.Z")
     const auto nl = output.find('\n');
-    std::cout << "output         : "
-              << output.substr(0, nl != std::string::npos ? nl : output.size())
+    cout << "output         : "
+              << output.substr(0, nl != string::npos ? nl : output.size())
               << "\n";
-    std::cout << "exit code      : " << code << "\n";
+    cout << "exit code      : " << code << "\n";
 }
 #endif // !__EMSCRIPTEN__
 
@@ -447,7 +449,7 @@ static void demo_boost_process() {
 // -----------------------------------------------------------------------------
 #ifndef __EMSCRIPTEN__
 static void demo_stacktrace() {
-    std::cout << "\n--- Boost.Stacktrace ---\n";
+    cout << "\n--- Boost.Stacktrace ---\n";
 
     // Captures the call stack at this point.
     // Built with BOOST_STACKTRACE_USE_BASIC so no debug-info files are needed;
@@ -455,14 +457,14 @@ static void demo_stacktrace() {
     //   Linux  : Boost::stacktrace_addr2line + BOOST_STACKTRACE_USE_ADDR2LINE
     //   Windows: Boost::stacktrace_windbg    + BOOST_STACKTRACE_USE_WINDBG
     const boost::stacktrace::stacktrace st;
-    std::cout << "frames captured: " << st.size() << "\n";
+    cout << "frames captured: " << st.size() << "\n";
 
-    const std::size_t show = std::min(st.size(), std::size_t{5});
-    for (std::size_t i = 0; i < show; ++i) {
-        std::cout << "  [" << i << "] " << st[i] << "\n";
+    const size_t show = min(st.size(), size_t{5});
+    for (size_t i = 0; i < show; ++i) {
+        cout << "  [" << i << "] " << st[i] << "\n";
     }
     if (st.size() > show) {
-        std::cout << "  ... (" << (st.size() - show) << " more frames)\n";
+        cout << "  ... (" << (st.size() - show) << " more frames)\n";
     }
 }
 #endif // !__EMSCRIPTEN__
@@ -472,7 +474,7 @@ static void demo_stacktrace() {
 //     (core library only; no IANA timezone database required)
 // -----------------------------------------------------------------------------
 static void demo_date() {
-    std::cout << "\n--- Howard Hinnant's Date library ---\n";
+    cout << "\n--- Howard Hinnant's Date library ---\n";
     using namespace date;
     using namespace std::chrono;
 
@@ -480,31 +482,31 @@ static void demo_date() {
     const auto today = floor<days>(system_clock::now());
     const auto ymd   = year_month_day{today};
 
-    std::cout << "today          : " << ymd << "\n";
-    std::cout << "year           : " << static_cast<int>(ymd.year())      << "\n";
-    std::cout << "month          : " << static_cast<unsigned>(ymd.month()) << "\n";
-    std::cout << "day            : " << static_cast<unsigned>(ymd.day())   << "\n";
-    std::cout << "day of week    : " << weekday{today} << "\n";
+    cout << "today          : " << ymd << "\n";
+    cout << "year           : " << static_cast<int>(ymd.year())      << "\n";
+    cout << "month          : " << static_cast<unsigned>(ymd.month()) << "\n";
+    cout << "day            : " << static_cast<unsigned>(ymd.day())   << "\n";
+    cout << "day of week    : " << weekday{today} << "\n";
 
     // arithmetic
-    std::cout << "in 7 days      : " << year_month_day{sys_days{today} + days{7}}  << "\n";
-    std::cout << "in 1 year      : " << (ymd.year() + years{1}) / ymd.month() / ymd.day() << "\n";
+    cout << "in 7 days      : " << year_month_day{sys_days{today} + days{7}}  << "\n";
+    cout << "in 1 year      : " << (ymd.year() + years{1}) / ymd.month() / ymd.day() << "\n";
 
     // days remaining until 1 Jan next year
     const auto jan1_next  = (ymd.year() + years{1}) / January / 1;
     const auto days_left  = (sys_days{jan1_next} - sys_days{today}).count();
-    std::cout << "days to Jan 1  : " << days_left << "\n";
+    cout << "days to Jan 1  : " << days_left << "\n";
 }
 
 // -----------------------------------------------------------------------------
 // 16. Vince's CSV Parser – parse CSV, access fields by column name
 // -----------------------------------------------------------------------------
 static void demo_csv() {
-    std::cout << "\n--- Vince's CSV Parser ---\n";
+    cout << "\n--- Vince's CSV Parser ---\n";
 
     // Inline data keeps the demo self-contained (no file path dependency).
     // To read a file instead: csv::CSVReader reader("path/to/file.csv");
-    const std::string csv_data =
+    const string csv_data =
         "name,age,city\n"
         "Alice,30,New York\n"
         "Bob,25,London\n"
@@ -512,17 +514,17 @@ static void demo_csv() {
 
     auto reader = csv::parse(csv_data);
 
-    std::cout << "columns        : ";
+    cout << "columns        : ";
     for (const auto& col : reader.get_col_names()) {
-        std::cout << col << "  ";
+        cout << col << "  ";
     }
-    std::cout << "\n";
+    cout << "\n";
 
     for (auto& row : reader) {
-        std::cout << "  "
-                  << row["name"].get<std::string>() << ", "
+        cout << "  "
+                  << row["name"].get<string>() << ", "
                   << "age " << row["age"].get<int>() << ", "
-                  << row["city"].get<std::string>()  << "\n";
+                  << row["city"].get<string>()  << "\n";
     }
 }
 
@@ -530,20 +532,20 @@ static void demo_csv() {
 // main
 // =============================================================================
 int main(int argc, char* argv[]) {
-    std::cout << "=== Cross-platform C++ app ===\n";
+    cout << "=== Cross-platform C++ app ===\n";
 
 #if defined(_WIN32)
-    std::cout << "platform: Windows\n";
+    cout << "platform: Windows\n";
 #elif defined(__APPLE__)
-    std::cout << "platform: macOS\n";
+    cout << "platform: macOS\n";
 #elif defined(__linux__)
-    std::cout << "platform: Linux\n";
+    cout << "platform: Linux\n";
 #else
-    std::cout << "platform: unknown\n";
+    cout << "platform: unknown\n";
 #endif
 
     const auto vm = parse_options(argc, argv);
-    std::cout << "host: " << vm["host"].as<std::string>()
+    cout << "host: " << vm["host"].as<string>()
               << "  port: " << vm["port"].as<int>() << "\n";
 
     demo_json();

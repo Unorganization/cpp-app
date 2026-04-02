@@ -2,6 +2,8 @@
 
 #include <cstddef>
 
+using namespace std;
+
 #ifdef __EMSCRIPTEN__
 
 // ---------------------------------------------------------------------------
@@ -19,15 +21,15 @@
 #include <sstream>
 #include <stdexcept>
 
-std::string_view get_embedded_sample_json() {
-    static const std::string cached = []() {
-        std::ifstream f("/data/sample.json");
+string_view get_embedded_sample_json() {
+    static const string cached = []() {
+        ifstream f("/data/sample.json");
         if (!f) {
-            throw std::runtime_error(
+            throw runtime_error(
                 "embedded resource: /data/sample.json not found in virtual FS; "
                 "ensure --preload-file was passed to the Emscripten linker");
         }
-        std::ostringstream ss;
+        ostringstream ss;
         ss << f.rdbuf();
         return ss.str();
     }();
@@ -65,10 +67,10 @@ extern "C" {
     extern const char _binary_sample_json_end[];
 }
 
-std::string_view get_embedded_sample_json() {
+string_view get_embedded_sample_json() {
     return {
         _binary_sample_json_start,
-        static_cast<std::size_t>(
+        static_cast<size_t>(
             _binary_sample_json_end - _binary_sample_json_start)
     };
 }

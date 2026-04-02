@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 #include "math_utils.h"
 
+using namespace std;
+
 TEST(AddTest, PositiveNumbers) {
     EXPECT_EQ(add(2, 3), 5);
 }

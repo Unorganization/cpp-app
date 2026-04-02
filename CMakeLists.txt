@@ -128,9 +128,14 @@ if(WIN32)
     # Target Windows XP x64 / Server 2003 (0x0502) — the earliest AMD64 Windows.
     # This is intentionally conservative: if code ever calls a newer Win32 API,
     # the compiler will error, making the dependency explicit and opt-in per project.
+    # NOMINMAX prevents <windows.h> from defining min/max macros that would shadow
+    # std::min / std::max.  WIN32_LEAN_AND_MEAN speeds up compilation by excluding
+    # rarely-used Win32 headers.
     target_compile_definitions(${PROJECT_NAME}_lib PUBLIC
         _WIN32_WINNT=0x0502
         WINVER=0x0502
+        NOMINMAX
+        WIN32_LEAN_AND_MEAN
     )
 endif()
 
