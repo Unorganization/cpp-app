@@ -52,6 +52,13 @@ jobs:
           path: build/*.zip
           if-no-files-found: error
 
+      - name: Upload test binary (for Wine job)
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64-tests
+          path: build/Release/cpp_app_tests.exe
+          if-no-files-found: error
+
   # ---------------------------------------------------------------------------
   # Linux x64 (Clang, static libgcc/libstdc++)
   # ---------------------------------------------------------------------------
@@ -282,10 +289,10 @@ jobs:
           if-no-files-found: error
 
   # ---------------------------------------------------------------------------
-  # Wine – run the Windows x64 release binary under Wine on Linux.
+  # Wine – run the Windows x64 unit tests under Wine on Linux.
   # Verifies that the statically linked binary remains compatible with Wine's
-  # Win32 implementation.  Targeting _WIN32_WINNT=0x0502 helps here: Wine's
-  # coverage of XP/Server-2003-era APIs is extremely mature.
+  # Win32 implementation. _WIN32_WINNT=0x0502 (XP x64) is the conservative
+  # floor for a 64-bit binary; Wine's coverage of this era is extremely mature.
   # This job does not produce a release artifact but runs on every push/PR
   # so any regression in Wine compatibility is caught immediately.
   # ---------------------------------------------------------------------------
@@ -294,28 +301,22 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-windows
     steps:
-      - name: Download Windows artifact
+      - name: Download test binary
         uses: actions/download-artifact@v4
         with:
-          name: release-windows-x64
-          path: windows-artifact
+          name: windows-x64-tests
+          path: windows-tests
 
       - name: Install Wine (64-bit)
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y wine64
 
-      - name: Extract artifact
-        run: unzip windows-artifact/*.zip -d windows-bin
-
-      - name: Run under Wine
+      - name: Run unit tests under Wine
         env:
-          WINEDEBUG: "-all"       # suppress Wine's verbose debug output
+          WINEDEBUG: "-all"         # suppress Wine's verbose debug output
           WINEDLLOVERRIDES: "mscoree,mshtml="   # skip .NET/IE stubs
-        run: |
-          exe=$(find windows-bin -name "*.exe" | head -1)
-          echo "Running: $exe"
-          wine64 "$exe"
+        run: wine64 windows-tests/cpp_app_tests.exe
 
   # ---------------------------------------------------------------------------
   # Release – only runs when a v*.*.* tag is pushed
