@@ -35,6 +35,7 @@ Pre-built binaries are published automatically on every tagged release.
 |---|---|
 | Windows 64-bit | `cpp_app-<version>-win64.zip` |
 | Linux 64-bit | `cpp_app-<version>-Linux.tar.gz` |
+| Android ARM64 (Termux) | `cpp_app-<version>-Android.tar.gz` |
 | macOS Intel (x86_64) | `cpp_app-<version>-Darwin-x86_64.tar.gz` |
 | macOS Apple Silicon (arm64) | `cpp_app-<version>-Darwin-arm64.tar.gz` |
 
@@ -80,6 +81,20 @@ Pre-built binaries are published automatically on every tagged release.
    ./cpp_app
    ```
    The binary is statically linked against `libgcc` and `libstdc++` so it runs on any reasonably modern glibc-based system (Ubuntu 20.04+, Debian 11+, and equivalents) without installing additional packages.
+
+### Android (Termux)
+
+1. Open **Termux**.
+2. Download the archive (e.g., using `curl -L <url> -o cpp_app.tar.gz`).
+3. Extract the archive:
+   ```bash
+   tar -xzf cpp_app.tar.gz
+   ```
+4. Run the application:
+   ```bash
+   ./cpp_app
+   ```
+   The binary is built with the Android NDK and statically links the C++ standard library, allowing it to run natively within the Termux environment.
 
 ---
 
@@ -177,26 +192,68 @@ The binary is at `build/bin/cpp_app`.
    git clone https://github.com/microsoft/vcpkg.git ~/vcpkg
    ~/vcpkg/bootstrap-vcpkg.sh -disableMetrics
    echo 'export VCPKG_ROOT="$HOME/vcpkg"' >> ~/.bashrc
-   source ~/.bashrc
+   **Configure and build**
+
+   ```bash
+   git clone https://github.com/<your-username>/<your-repo>.git
+   cd <your-repo>/cpp-app
+
+   cmake -S . -B build \
+     -G Ninja \
+     -DCMAKE_BUILD_TYPE=Release \
+     -DCMAKE_C_COMPILER=clang \
+     -DCMAKE_CXX_COMPILER=clang++ \
+     -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+
+   cmake --build build --parallel
    ```
 
-**Configure and build**
+   The binary is at `build/bin/cpp_app`.
 
-```bash
-git clone https://github.com/<your-username>/<your-repo>.git
-cd <your-repo>/cpp-app
+   ---
 
-cmake -S . -B build \
-  -G Ninja \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_C_COMPILER=clang \
-  -DCMAKE_CXX_COMPILER=clang++ \
-  -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+   ### Android (Termux)
 
-cmake --build build --parallel
-```
+   **One-time setup**
 
-The binary is at `build/bin/cpp_app`.
+   1. Install build tools:
+      ```bash
+      pkg update
+      pkg install -y git cmake clang ninja python
+      ```
+
+   2. Install vcpkg (bootstrapped for ARM/Termux):
+      ```bash
+      git clone https://github.com/microsoft/vcpkg.git ~/vcpkg
+      ~/vcpkg/bootstrap-vcpkg.sh -disableMetrics -useSystemBinaries
+      export VCPKG_ROOT="$HOME/vcpkg"
+      export VCPKG_FORCE_SYSTEM_BINARIES=1
+      echo 'export VCPKG_ROOT="$HOME/vcpkg"' >> ~/.bashrc
+      echo 'export VCPKG_FORCE_SYSTEM_BINARIES=1' >> ~/.bashrc
+      ```
+
+   **Configure and build**
+
+   ```bash
+   git clone https://github.com/<your-username>/<your-repo>.git
+   cd <your-repo>/cpp-app
+
+   cmake -S . -B build \
+     -G Ninja \
+     -DCMAKE_BUILD_TYPE=Release \
+     -DCMAKE_C_COMPILER=clang \
+     -DCMAKE_CXX_COMPILER=clang++ \
+     -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
+     -DVCPKG_TARGET_TRIPLET=arm64-linux
+
+   cmake --build build --parallel
+   ```
+
+   The binary is at `build/bin/cpp_app`.
+
+   ---
+
+   ### Other platforms
 
 > **vcpkg first run:** The first configure will download and compile all dependencies
 > (including Boost) from source. This takes several minutes. Subsequent builds are

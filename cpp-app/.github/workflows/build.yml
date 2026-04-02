@@ -186,6 +186,47 @@ jobs:
           if-no-files-found: error
 
   # ---------------------------------------------------------------------------
+  # Android / Termux ARM64 (NDK + vcpkg arm64-android)
+  # ---------------------------------------------------------------------------
+  build-android:
+    name: Android ARM64 (Termux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup vcpkg
+        run: echo "VCPKG_ROOT=$VCPKG_INSTALLATION_ROOT" >> $GITHUB_ENV
+
+      - name: Configure CMake
+        run: >
+          cmake -S . -B build
+          -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake"
+          -DVCPKG_TARGET_TRIPLET=arm64-android
+          -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE="${ANDROID_NDK_LATEST_HOME}/build/cmake/android.toolchain.cmake"
+          -DANDROID_ABI=arm64-v8a
+          -DANDROID_PLATFORM=android-24
+          -DANDROID_STL=c++_static
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      # Note: Tests are skipped for Android on x86 runners as they would require
+      # an ARM64 emulator to execute.
+
+      - name: Package
+        run: cpack --config CPackConfig.cmake -G TGZ
+        working-directory: build
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-android-arm64
+          path: build/*.tar.gz
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
   # Release – only runs when a v*.*.* tag is pushed
   # ---------------------------------------------------------------------------
   release:
@@ -196,6 +237,7 @@ jobs:
       - build-linux
       - build-macos-x64
       - build-macos-arm64
+      - build-android
     runs-on: ubuntu-latest
     permissions:
       contents: write

@@ -104,6 +104,10 @@ Provides core production logic. Currently contains a basic `add(int, int)` funct
 **Decision:** Force `/MT` in Release builds and use the `x64-windows-static` vcpkg triplet.
 - **Rationale:** Eliminates dependencies on Visual C++ Redistributables for true self-containment.
 
+### Android: Bionic & NDK
+**Decision:** Use the Android NDK for cross-compilation and link the C++ standard library statically (`-DANDROID_STL=c++_static`).
+- **Rationale:** Targets the Android-native Bionic libc while ensuring all C++ logic is self-contained within the binary, making it portable across Termux environments on ARM64 devices.
+
 ---
 
 ## 8. CI/CD Pipeline Blueprint (GitHub Actions)
@@ -113,6 +117,7 @@ The workflow (`build.yml`) automates the following:
     - **Windows**: Uses `Visual Studio 17 2022` with the `ClangCL` toolset.
     - **Linux**: Uses `ubuntu-20.04` with `Ninja` and `clang++`.
     - **macOS (Intel & Silicon)**: Uses `macos-13` (x86_64) and `macos-14` (arm64) runners.
+    - **Android**: Uses `ubuntu-latest` with the Android NDK to cross-compile for `arm64-v8a`.
 2.  **Automated Testing**: Runs `ctest` on every push and pull request.
 3.  **Packaging**: Invokes `cpack` to create `.zip` (Windows) and `.tar.gz` (Unix) archives.
 4.  **Release Automation**: Automatically creates a GitHub Release and uploads all four archives when a `v*.*.*` tag is pushed.
