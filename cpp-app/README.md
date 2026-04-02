@@ -1,10 +1,25 @@
 # cpp_app
 
-A cross-platform C++ console application that runs on Windows, macOS, and Linux.
+A "batteries-included" template for building cross-platform C++ console applications that are **fully self-contained** (statically linked).
 
-> **For AI agents and contributors:** Read [`AGENTS.md`](AGENTS.md) before making any
-> changes. It documents the self-containment design principles that all modifications
-> must maintain.
+> **For AI agents and contributors:** Read [`AGENTS.md`](AGENTS.md) and
+> [`ARCHITECTURE.md`](ARCHITECTURE.md) before making any changes. They document the
+> self-containment design principles, architectural rationale, and the requirement that
+> **all markdown documentation must be updated** to reflect any changes made to the
+> codebase or build system.
+
+---
+
+## Purpose & Philosophy
+
+The primary goal of this project is to provide a reliable base for C++ tools that "just work" everywhere. It solves the common C++ distribution problem where a binary works on the developer's machine but fails on another due to missing DLLs, incompatible runtimes, or mismatched library versions.
+
+### Core Principles
+
+1.  **Maximum Binary Self-Containment:** Every release binary is statically linked. Users can download a single file, extract it, and run it. No "Redistributable" installers or package managers are required for the end-user.
+2.  **Cross-Platform Consistency:** By enforcing **Clang** and **vcpkg** across Windows, macOS, and Linux, we ensure that the same code behaves identically across all targets.
+3.  **Modern C++ Foundation:** Built on **C++17**, integrating high-quality libraries like **Boost** (Asio, Beast, JSON, Filesystem, Program Options) and **Google Test**, providing a production-ready starting point.
+4.  **Developer Autonomy:** The build system is designed to be modified easily. Renaming the project or adding new source files is a one-line change.
 
 ---
 

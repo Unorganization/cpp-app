@@ -1,16 +1,24 @@
 # AI Agent Guidelines for cpp_app
 
 This file exists specifically to inform AI coding assistants (Claude, Copilot, Cursor,
-ChatGPT, etc.) of the non-negotiable design principles for this project. Read this file
-in full before making any change to source files, CMakeLists.txt, vcpkg.json, or the
-GitHub Actions workflows.
+ChatGPT, etc.) of the non-negotiable design principles for this project.
+
+## Mandatory Documentation Update Rule
+
+Whenever an AI agent makes a change to this project—whether in the source code,
+CMake configuration, or the GitHub Actions workflow—**all relevant markdown
+documentation (`README.md`, `AGENTS.md`, `ARCHITECTURE.md`, etc.) must be updated**
+to reflect those changes. This ensures that the purpose and usage of the repository
+remain clear for all future contributors and AI agents.
 
 ---
 
 ## Core Principle: Maximum Binary Self-Containment
 
 The single most important rule in this codebase is that **every release binary must be
-as self-contained as possible**. End-users should be able to download a release archive,
+as self-contained as possible**. See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the
+detailed technical rationale behind this principle.
+ End-users should be able to download a release archive,
 extract it, and run the executable without installing any additional software, libraries,
 or runtimes.
 
