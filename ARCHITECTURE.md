@@ -101,7 +101,45 @@ Provides core production logic. Currently contains a basic `add(int, int)` funct
 
 ---
 
-## 6. Build Performance: Precompiled Headers (PCH)
+## 5b. C++ Standard: C++17
+
+**Decision:** The project is built with C++17 (`set(CMAKE_CXX_STANDARD 17)`).
+
+**Rationale:**
+
+C++17 was chosen because it is the highest standard with **complete, verified compiler support across every current target platform**:
+
+| Platform | Compiler | C++17 status | C++20 status |
+|---|---|---|---|
+| Windows | clang-cl (LLVM/MSVC) | ✅ Full | ⚠️ Mostly complete, some modules gaps |
+| Linux | Clang 10+ | ✅ Full | ⚠️ Requires Clang 13+ for full support |
+| macOS | Apple Clang (Xcode 10+) | ✅ Full | ⚠️ Requires Xcode 13+ / macOS 12+ |
+| Android | NDK r21+ Clang | ✅ Full | ⚠️ Depends on NDK version |
+| WebAssembly | Emscripten 2.x+ | ✅ Full | ⚠️ Partial |
+
+**C++17 features actively used in this codebase:**
+- `std::filesystem` — directory iteration, path manipulation (demo 5)
+- `std::string_view` — zero-copy string references in the embedded resource API
+- `std::optional` / `std::variant` — in Boost.URL result types
+- Structured bindings (`auto [a, b] = ...`)
+- `if constexpr` — compile-time branching
+- `std::reduce` — parallel-ready accumulation (demo 8)
+- Guaranteed copy elision (NRVO)
+
+**The specific reason NOT to use C++20 yet:**
+
+Howard Hinnant's `date` library (demo 15) fills the C++17 gap for calendar date arithmetic (`year_month_day`, `sys_days`, weekday arithmetic). C++20's `<chrono>` absorbs this functionality — but with **different type names and slightly different semantics**. Upgrading to C++20 would require either removing the `date` library dependency or carefully migrating the demo to `std::chrono` calendar types to avoid symbol conflicts from `using namespace date` + `using namespace std::chrono`.
+
+**When to move to C++20:**
+
+Move to C++20 when:
+1. All CI compilers (clang-cl, Clang on Linux, Apple Clang, NDK Clang, Emscripten) fully support the C++20 features you intend to use.
+2. The `date` library dependency is removed and demo 15 is rewritten using `std::chrono` calendar types (C++20).
+3. Any other library dependency that conflicts with C++20 identifiers is resolved.
+
+**`CMAKE_CXX_EXTENSIONS OFF`:** Compiler-specific extensions (e.g., `__int128` on MSVC) are disabled to maintain portability across all toolchains. Do not re-enable this without testing on all platforms.
+
+
 
 **Decision:** Use `target_precompile_headers` for heavy libraries like Boost and STL.
 
