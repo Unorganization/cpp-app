@@ -3,13 +3,32 @@
 This file exists specifically to inform AI coding assistants (Claude, Copilot, Cursor,
 ChatGPT, etc.) of the non-negotiable design principles for this project.
 
-## Mandatory Documentation Update Rule
+## ⚠️ MANDATORY: Update Documentation With Every Change
 
-Whenever an AI agent makes a change to this project—whether in the source code,
-CMake configuration, or the GitHub Actions workflow—**all relevant markdown
-documentation (`README.md`, `AGENTS.md`, `ARCHITECTURE.md`, etc.) must be updated**
-to reflect those changes. This ensures that the purpose and usage of the repository
-remain clear for all future contributors and AI agents.
+**This is not optional. There are no exceptions.**
+
+Any change to source code, `CMakeLists.txt`, `vcpkg.json`, GitHub Actions workflows,
+or any other file in the repo triggers this rule. The following documentation files
+must be checked and updated as needed:
+
+- **`README.md`**
+- **`AGENTS.md`**
+- **`ARCHITECTURE.md`**
+
+Do not wait to be asked. Do not skip this step. A commit that changes behaviour
+without updating the relevant documentation is incomplete.
+
+### Pre-commit documentation checklist
+
+Before every commit, run through the following mentally:
+
+- [ ] Does `README.md` still accurately describe the build steps, supported platforms,
+      and minimum versions?
+- [ ] Does `README.md` have accurate unit test instructions for every platform touched?
+- [ ] Does `ARCHITECTURE.md` still accurately describe the libraries, CI jobs, and
+      design decisions?
+- [ ] Does `AGENTS.md` reflect any new conventions or constraints introduced by this
+      change?
 
 ---
 

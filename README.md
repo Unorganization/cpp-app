@@ -111,10 +111,12 @@ everywhere.
 
 **One-time setup**
 
-1. Install [Visual Studio 2022](https://visualstudio.microsoft.com/) with these
+1. Install [Git for Windows](https://git-scm.com/download/win) (if not already installed).
+
+2. Install [Visual Studio 2022](https://visualstudio.microsoft.com/) with these
    workloads/components selected in the installer:
    - *Desktop development with C++*
-   - *C++ Clang tools for Windows* (individual component — this installs `clang-cl`)
+   - *C++ Clang tools for Windows* (individual component — installs `clang-cl` and `llvm-objcopy`)
 
 2. Install vcpkg and set the environment variable:
    ```powershell
@@ -141,13 +143,20 @@ cmake --build build --config Release --parallel
 
 The binary is at `build\bin\cpp_app.exe`.
 
+**Running unit tests**
+
+```powershell
+ctest --test-dir build -C Release --output-on-failure
+```
+
 ---
 
 ### macOS
 
 **One-time setup**
 
-1. Install Xcode Command Line Tools (provides Apple Clang) and LLVM tools:
+1. Install Xcode Command Line Tools (provides Apple Clang) and LLVM tools
+   (`llvm-objcopy` is included):
    ```bash
    xcode-select --install
    brew install llvm
@@ -177,13 +186,19 @@ cmake --build build --parallel
 
 The binary is at `build/bin/cpp_app`.
 
+**Running unit tests**
+
+```bash
+ctest --test-dir build --output-on-failure
+```
+
 ---
 
 ### Linux (Ubuntu / Debian)
 
 **One-time setup**
 
-1. Install Clang, LLVM tools, and the supporting build tools:
+1. Install Clang, LLVM tools (includes `llvm-objcopy`), and the supporting build tools:
    ```bash
    sudo apt-get update
    sudo apt-get install -y build-essential clang llvm cmake ninja-build
@@ -194,68 +209,79 @@ The binary is at `build/bin/cpp_app`.
    git clone https://github.com/microsoft/vcpkg.git ~/vcpkg
    ~/vcpkg/bootstrap-vcpkg.sh -disableMetrics
    echo 'export VCPKG_ROOT="$HOME/vcpkg"' >> ~/.bashrc
-   **Configure and build**
-
-   ```bash
-   git clone https://github.com/<your-username>/<your-repo>.git
-   cd <your-repo>/cpp-app
-
-   cmake -S . -B build \
-     -G Ninja \
-     -DCMAKE_BUILD_TYPE=Release \
-     -DCMAKE_C_COMPILER=clang \
-     -DCMAKE_CXX_COMPILER=clang++ \
-     -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
-
-   cmake --build build --parallel
+   source ~/.bashrc
    ```
 
-   The binary is at `build/bin/cpp_app`.
+**Configure and build**
 
-   ---
+```bash
+git clone https://github.com/<your-username>/<your-repo>.git
+cd <your-repo>/cpp-app
 
-   ### Android (Termux)
+cmake -S . -B build \
+  -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_C_COMPILER=clang \
+  -DCMAKE_CXX_COMPILER=clang++ \
+  -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
 
-   **One-time setup**
+cmake --build build --parallel
+```
 
-   1. Install build tools:
-      ```bash
-      pkg update
-      pkg install -y git cmake clang ninja python
-      ```
+The binary is at `build/bin/cpp_app`.
 
-   2. Install vcpkg (bootstrapped for ARM/Termux):
-      ```bash
-      git clone https://github.com/microsoft/vcpkg.git ~/vcpkg
-      ~/vcpkg/bootstrap-vcpkg.sh -disableMetrics -useSystemBinaries
-      export VCPKG_ROOT="$HOME/vcpkg"
-      export VCPKG_FORCE_SYSTEM_BINARIES=1
-      echo 'export VCPKG_ROOT="$HOME/vcpkg"' >> ~/.bashrc
-      echo 'export VCPKG_FORCE_SYSTEM_BINARIES=1' >> ~/.bashrc
-      ```
+**Running unit tests**
 
-   **Configure and build**
+```bash
+ctest --test-dir build --output-on-failure
+```
 
+---
+
+### Android (Termux)
+
+**One-time setup**
+
+1. Install build tools:
    ```bash
-   git clone https://github.com/<your-username>/<your-repo>.git
-   cd <your-repo>/cpp-app
-
-   cmake -S . -B build \
-     -G Ninja \
-     -DCMAKE_BUILD_TYPE=Release \
-     -DCMAKE_C_COMPILER=clang \
-     -DCMAKE_CXX_COMPILER=clang++ \
-     -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
-     -DVCPKG_TARGET_TRIPLET=arm64-linux
-
-   cmake --build build --parallel
+   pkg update
+   pkg install -y git cmake clang ninja python
    ```
 
-   The binary is at `build/bin/cpp_app`.
+2. Install vcpkg (bootstrapped for ARM/Termux):
+   ```bash
+   git clone https://github.com/microsoft/vcpkg.git ~/vcpkg
+   ~/vcpkg/bootstrap-vcpkg.sh -disableMetrics -useSystemBinaries
+   export VCPKG_ROOT="$HOME/vcpkg"
+   export VCPKG_FORCE_SYSTEM_BINARIES=1
+   echo 'export VCPKG_ROOT="$HOME/vcpkg"' >> ~/.bashrc
+   echo 'export VCPKG_FORCE_SYSTEM_BINARIES=1' >> ~/.bashrc
+   ```
 
-   ---
+**Configure and build**
 
-   ### Other platforms
+```bash
+git clone https://github.com/<your-username>/<your-repo>.git
+cd <your-repo>/cpp-app
+
+cmake -S . -B build \
+  -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_C_COMPILER=clang \
+  -DCMAKE_CXX_COMPILER=clang++ \
+  -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
+  -DVCPKG_TARGET_TRIPLET=arm64-android
+
+cmake --build build --parallel
+```
+
+The binary is at `build/bin/cpp_app`.
+
+**Running unit tests**
+
+> **Note:** Tests cannot be run when cross-compiling from a non-Android host (the
+> binary targets Bionic ABI). If building natively in Termux on an Android device,
+> run: `ctest --test-dir build --output-on-failure`
 
 > **vcpkg first run:** The first configure will download and compile all dependencies
 > (including Boost) from source. This takes several minutes. Subsequent builds are
@@ -275,6 +301,12 @@ The Linux build instructions above transfer directly. Replace the `apt-get` step
 `pkg install cmake ninja llvm`
 
 Clang is the default compiler on FreeBSD (10+). vcpkg has known-working support on FreeBSD. Use the same CMake configure command as Linux, substituting `clang` and `clang++` as shown.
+
+**WebAssembly**
+
+> **Note:** The CTest unit test runner cannot execute WebAssembly binaries natively.
+> The Emscripten output can be smoke-tested via Node.js:
+> `node build/bin/cpp_app.js`
 
 ---
 
@@ -454,10 +486,85 @@ You can then edit the release notes on GitHub if desired.
 
 ---
 
+## Developer Tools
+
+### Recommended editor setup
+
+[**Visual Studio Code**](https://code.visualstudio.com/) works well on all platforms.
+Install these extensions:
+
+| Extension | Purpose |
+|---|---|
+| `ms-vscode.cmake-tools` | CMake configure/build/test integration |
+| `llvm-vs-code-extensions.vscode-clangd` | Code completion, navigation, diagnostics via clangd |
+| `ms-vscode.cpptools` | Debugger (MSVC/GDB/LLDB) |
+
+On Windows, **Visual Studio 2022** itself is also a fully supported IDE — open
+the folder directly and it detects `CMakeLists.txt` automatically.
+
+### ast-grep — structural code search and rewrite
+
+[`ast-grep`](https://ast-grep.github.io/) (`sg`) is a fast, AST-aware code
+search and transformation tool. Unlike `grep` or regex-based tools, it
+understands code structure — it will never match text inside string literals or
+comments, and it handles nested templates and complex expressions correctly.
+It is the recommended tool for any large-scale code modifications in this
+project (renaming types, adding/removing qualifiers, changing call signatures).
+
+**Install:**
+
+```bash
+# macOS
+brew install ast-grep
+
+# Windows (via npm — requires Node.js)
+npm install -g @ast-grep/cli
+
+# Any platform via Cargo (requires Rust)
+cargo install ast-grep
+```
+
+**Example — find all uses of a type across the codebase:**
+```bash
+sg --pattern 'boost::system::error_code' --lang cpp src/
+```
+
+**Example — rename a function across all C++ files:**
+```bash
+sg --pattern 'old_function_name($ARGS)' \
+   --rewrite 'new_function_name($ARGS)' \
+   --lang cpp src/
+```
+
+---
+
+## Developer Checklist (Before You Push)
+
+Every developer making a code change is expected to, at minimum, do the following
+before pushing:
+
+1. **Build for your local platform.** You don't need to cross-compile for all targets —
+   CI handles that. But your local build must succeed cleanly with no new warnings.
+2. **Run the unit tests.** Use the `ctest` command for your platform (see
+   *Running Unit Tests* above). All tests must pass.
+3. **Update documentation.** If your change affects build steps, supported platforms,
+   library list, CI jobs, minimum OS versions, or any other documented behaviour:
+   update `README.md`, `ARCHITECTURE.md`, and/or `AGENTS.md` accordingly. Do not leave
+   documentation stale.
+4. **Let CI be the cross-platform gate.** Push to a branch and open a PR. The GitHub
+   Actions workflow will build and test on Windows, Linux, macOS (x86_64 + arm64),
+   Android, WebAssembly, and run Wine compatibility tests. A green CI run is required
+   before merging to `main`.
+
+> AI agents are subject to the same checklist. See `AGENTS.md` for the enforcement
+> rule.
+
+---
+
 ## Supported Platforms
 
 | OS | Architectures | Minimum version |
 |---|---|---|
-| Windows | x64 | Windows 10 / Server 2016 |
+| Windows | x64 | Windows XP x64 / Server 2003 |
 | macOS | x86_64 (Intel), arm64 (Apple Silicon) | macOS 12 Monterey |
 | Linux | x86_64 | Ubuntu 20.04 / Debian 11 or equivalent glibc ≥ 2.31 |
