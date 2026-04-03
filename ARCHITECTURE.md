@@ -25,7 +25,7 @@ cpp-app/
 │   ├── CMakeLists.txt     # Test target configuration
 │   └── test_math_utils.cpp # GTest cases for math_utils
 ├── CMakeLists.txt         # Root build configuration
-├── vcpkg.json             # Dependency manifest (Boost, GTest)
+├── vcpkg.json             # Dependency manifest (third-party libraries, GTest)
 ├── README.md              # User documentation
 ├── AGENTS.md              # AI agent guidelines
 └── ARCHITECTURE.md        # Technical specification (this file)
@@ -36,14 +36,14 @@ cpp-app/
 ## 2. Dependency Manifest (`vcpkg.json`)
 
 The following libraries are managed via vcpkg in manifest mode:
-- **`boost-asio`**: Asynchronous networking and I/O.
-- **`boost-beast`**: HTTP and WebSocket library built on Asio.
-- **`boost-json`**: JSON parsing and serialization.
-- **`boost-process`**: Cross-platform child-process management (Boost.Process v2).
-- **`boost-program-options`**: Command-line argument parsing.
-- **`boost-stacktrace`**: Call-stack capture at runtime (basic backend; no debug symbols required).
-- **`boost-url`**: URI/URL parsing, inspection, and mutation.
-- **`boost-uuid`**: UUID generation — random (v4) and name-based/SHA-1 (v5).
+- **`asio`**: Standalone Asio — asynchronous I/O and timer (header-only; no Boost dependency). Defines `ASIO_STANDALONE` to disable Boost header lookups.
+- **`cli11`**: CLI11 — command-line argument parsing (header-only).
+- **`nlohmann-json`**: nlohmann/json — JSON parsing and serialization (header-only).
+- **`ada-url`**: Ada URL — WHATWG-compliant URI parsing and mutation (compiled; small; also used by Node.js and Cloudflare Workers).
+- **`stduuid`**: stduuid — UUID generation, random (v4) via OS-native source and name-based/SHA-1 (v5). Uses `uuid_system_generator` (CoCreateGuid on Windows) for broad platform compatibility (header-only).
+- **`cpp-httplib`**: cpp-httplib — synchronous HTTP client/server (header-only; excluded from `wasm32-emscripten`).
+- **`reproc`**: reproc — cross-platform child-process management, C++ bindings via `reproc++` (excluded from `wasm32-emscripten`).
+- **`cpptrace`**: cpptrace — portable call-stack capture with symbol resolution (excluded from `wasm32-emscripten`).
 - **`csv-parser`**: Vince's CSV parser — reads CSV data from files or strings, accessed by column name.
 - **`date`**: Howard Hinnant's calendar date library — fills the C++17 gap for date arithmetic (`year_month_day`, weekday, date math). Core library only; no IANA timezone database required.
 - **`gtest`**: Google Test framework for unit testing.
@@ -68,20 +68,20 @@ The project is split into two main targets:
 
 ### `main.cpp` (Demonstration Suite)
 The entry point serves as a comprehensive "kitchen sink" demo of the integrated libraries:
-1.  **Boost.ProgramOptions**: Handles `--help`, `--host`, and `--port`.
-2.  **Boost.JSON**: Parses raw strings, inspects objects, and serializes responses.
-3.  **Boost.Asio**: Implements an asynchronous 200ms steady timer.
-4.  **Boost.Beast**: Performs a synchronous HTTP GET request to `example.com`.
+1.  **CLI11**: Handles `--host` and `--port` via `CLI::App`; `--help` is auto-generated.
+2.  **nlohmann/json**: Parses raw strings, inspects objects, and serializes responses.
+3.  **Asio (standalone)**: Implements an asynchronous 200ms steady timer.
+4.  **cpp-httplib**: Performs a synchronous HTTP GET request to `example.com`.
 5.  **std::filesystem**: Enumerates and labels (DIR/FILE) the current working directory.
 6.  **std::regex**: Searches for IP patterns and extracts numbers from text.
 7.  **std::thread / std::future**: Executes `math_utils::add` asynchronously via `std::async`.
 8.  **Functional Programming**: Demonstrates `std::transform`, `std::copy_if`, and `std::reduce` (C++17).
 9.  **Embedded resource**: Reads `data/sample.json` that was baked into the executable at link time via `llvm-objcopy`. Accessed through linker symbols with no file I/O at runtime.
 10. **spdlog**: Creates a multi-sink logger (coloured stdout + rotating file). Demonstrates all four severity levels (debug/info/warn/error) with a timestamped, level-tagged pattern. The rotating file sink caps each file at 5 MB and auto-deletes the oldest when more than 3 files accumulate.
-11. **Boost.URL**: Parses a URI into components (scheme, host, port, path, query, fragment) via an immutable `url_view`, then mutates a copy using the `url` class.
-12. **Boost.UUID**: Generates random (v4) UUIDs and reproducible name-based (v5/SHA-1) UUIDs; demonstrates string serialisation and round-trip parsing.
-13. **Boost.Process v2**: Locates `cmake` via `find_executable`, spawns it with `--version`, captures its stdout through a `readable_pipe`, and reports the exit code.
-14. **Boost.Stacktrace**: Captures the current call stack and prints up to five frames. Built with the basic backend (raw addresses); comments show how to switch to a symbolising backend per platform.
+11. **ada-url**: Parses a URI into components (scheme, host, port, path, query, fragment) using WHATWG-compliant parsing, then mutates the URL in place using setter methods.
+12. **stduuid**: Generates random (v4) UUIDs via `uuid_system_generator` (OS-native source) and reproducible name-based (v5/SHA-1) UUIDs; demonstrates string serialisation and round-trip parsing.
+13. **reproc**: Spawns `cmake --version` as a child process, captures its stdout through a pipe, and reports the exit code using the `reproc++` C++ API.
+14. **cpptrace**: Captures the current call stack and prints up to five frames. Debug builds include function names and line numbers; release builds show addresses.
 15. **Howard Hinnant's Date**: Converts the current `system_clock` instant to a `year_month_day`, performs calendar arithmetic (add 7 days, add 1 year), identifies the day of the week, and counts days to the next 1 January.
 16. **Vince's CSV Parser**: Parses inline CSV data (name/age/city), enumerates column names, and iterates rows accessing fields by name with typed `get<T>()`.
 
@@ -120,7 +120,7 @@ C++17 was chosen because it is the highest standard with **complete, verified co
 **C++17 features actively used in this codebase:**
 - `std::filesystem` — directory iteration, path manipulation (demo 5)
 - `std::string_view` — zero-copy string references in the embedded resource API
-- `std::optional` / `std::variant` — in Boost.URL result types
+- `std::optional` / `std::variant` — in ada-url result types
 - Structured bindings (`auto [a, b] = ...`)
 - `if constexpr` — compile-time branching
 - `std::reduce` — parallel-ready accumulation (demo 8)
@@ -141,10 +141,10 @@ Move to C++20 when:
 
 
 
-**Decision:** Use `target_precompile_headers` for heavy libraries like Boost and STL.
+**Decision:** Use `target_precompile_headers` for commonly included headers.
 
 **Rationale:**
-- **Speed:** Compiling Boost headers (especially Asio and Beast) is computationally expensive. Precompiling them once per build significantly reduces incremental build times.
+- **Speed:** Precompiling large headers (especially `asio.hpp`, `nlohmann/json.hpp`, and `httplib.h`) once per build reduces incremental build times.
 
 ---
 
@@ -203,11 +203,11 @@ Move to C++20 when:
 
 **What works / what doesn't:**
 - Demos 1–3, 5–6, 8–12, 15–16 run identically in the browser.
-- Demos 4 (Beast HTTP), 7 (threads), 13 (Process v2), and 14 (Stacktrace) are disabled via `#ifndef __EMSCRIPTEN__` because the browser sandbox has no raw TCP sockets, no `fork`/`exec`, and no stack-unwinding support.
-- The Boost.Asio timer (demo 3) works because `-sASYNCIFY` allows `ioc.run()` to suspend cooperatively instead of blocking the browser's event loop.
+- Demos 4 (cpp-httplib HTTP), 7 (threads), 13 (reproc), and 14 (cpptrace) are disabled via `#ifndef __EMSCRIPTEN__` because the browser sandbox has no raw TCP sockets, no `fork`/`exec`, and no stack-unwinding support.
+- The standalone Asio timer (demo 3) works because `-sASYNCIFY` allows `ioc.run()` to suspend cooperatively instead of blocking the browser's event loop.
 - The embedded resource (demo 9) uses Emscripten's `--preload-file` to package `data/sample.json` into the virtual filesystem instead of the llvm-objcopy linker-symbol approach, which doesn't apply to wasm objects.
 
-**vcpkg:** `boost-beast`, `boost-process`, and `boost-stacktrace` are excluded from the `wasm32-emscripten` build via `"platform": "!wasm32"` in `vcpkg.json`.
+**vcpkg:** `cpp-httplib`, `reproc`, and `cpptrace` are excluded from the `wasm32-emscripten` build via `"platform": "!wasm32"` in `vcpkg.json`.
 
 **CI testing:** Emscripten output also runs under Node.js, so `node cpp_app.js` serves as the test step — no browser or emulator required.
 

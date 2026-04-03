@@ -2,28 +2,28 @@
 // main.cpp – demonstrates each supported library with a minimal working sample.
 //
 // Sections:
-//   1. Boost.ProgramOptions  – command-line argument parsing
-//   2. Boost.JSON            – parse, inspect, and serialize JSON
-//   3. Boost.Asio            – async timer (event-loop / io_context pattern)
-//   4. Boost.Beast           – synchronous HTTP GET over plain TCP
-//   5. filesystem       – enumerate files in the working directory
-//   6. regex            – search for an IP address pattern in a string
-//   7. thread / future  – background task with async
-//   8. FP (transform /  – map, filter, reduce over a vector
+//   1. CLI11                  – command-line argument parsing
+//   2. nlohmann/json          – parse, inspect, and serialize JSON
+//   3. Asio (standalone)      – async timer (event-loop / io_context pattern)
+//   4. cpp-httplib            – synchronous HTTP GET over plain TCP
+//   5. filesystem        – enumerate files in the working directory
+//   6. regex             – search for an IP address pattern in a string
+//   7. thread / future   – background task with async
+//   8. FP (transform /   – map, filter, reduce over a vector
 //          copy_if /
 //          reduce)
-//   9. Embedded resource     – binary file linked into the executable at build
-//                              time via llvm-objcopy; accessed through linker
-//                              symbols with no file I/O at runtime
+//   9. Embedded resource      – binary file linked into the executable at build
+//                               time via llvm-objcopy; accessed through linker
+//                               symbols with no file I/O at runtime
 //  10. spdlog                 – structured logging with coloured stdout sink
-//                              and a size-based rotating file sink; oldest
-//                              files deleted automatically when limit is reached
-//  11. Boost.URL              – parse, inspect, and mutate URIs
-//  12. Boost.UUID             – generate random (v4) and name-based (v5) UUIDs
-//  13. Boost.Process v2       – launch a child process, capture its stdout
-//  14. Boost.Stacktrace       – capture and print the current call stack
+//                               and a size-based rotating file sink; oldest
+//                               files deleted automatically when limit is reached
+//  11. ada-url                – parse, inspect, and mutate URIs
+//  12. stduuid                – generate random (v4) and name-based (v5) UUIDs
+//  13. reproc                 – launch a child process, capture its stdout
+//  14. cpptrace               – capture and print the current call stack
 //  15. Howard Hinnant's Date  – calendar date arithmetic on top of <chrono>
-//                              (core library only; no IANA timezone data needed)
+//                               (core library only; no IANA timezone data needed)
 //  16. Vince's CSV Parser     – parse CSV data, access fields by column name
 // =============================================================================
 
@@ -38,22 +38,20 @@
 #include <thread>
 #include <vector>
 
-#include <boost/asio.hpp>
-#include <boost/json.hpp>
-#include <boost/program_options.hpp>
-#include <boost/url.hpp>
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_generators.hpp>
-#include <boost/uuid/uuid_io.hpp>
+#include <asio.hpp>
+#include <nlohmann/json.hpp>
+#include <CLI/CLI.hpp>
+#include <ada.h>
+#include <uuid.h>
 #include <date/date.h>
 #include <csv.hpp>
 
 // These libraries require OS capabilities absent from the browser sandbox.
 #ifndef __EMSCRIPTEN__
-#include <boost/beast.hpp>
-#include <boost/beast/http.hpp>
-#include <boost/process/v2.hpp>
-#include <boost/stacktrace.hpp>
+#include <httplib.h>
+#include <reproc++/reproc.hpp>
+#include <reproc++/drain.hpp>
+#include <cpptrace/cpptrace.hpp>
 #endif
 
 #include "math_utils.h"
@@ -63,41 +61,30 @@
 using namespace std;
 
 namespace fs  = filesystem;
-namespace po  = boost::program_options;
-namespace net = boost::asio;
+namespace net = asio;
 using     tcp = net::ip::tcp;
-namespace beast = boost::beast;
-namespace http  = beast::http;
-namespace json  = boost::json;
+using     json = nlohmann::json;
 
 // -----------------------------------------------------------------------------
-// 1. Boost.ProgramOptions
+// 1. CLI11 – command-line argument parsing
 // -----------------------------------------------------------------------------
-static po::variables_map parse_options(int argc, char* argv[]) {
-    po::options_description desc("Options");
-    desc.add_options()
-        ("help,h",  "show this help message")
-        ("host",    po::value<string>()->default_value("localhost"),
-                    "server hostname")
-        ("port,p",  po::value<int>()->default_value(8080),
-                    "server port");
+static void parse_options(int argc, char* argv[], string& host, int& port) {
+    CLI::App app{"cpp_app"};
+    app.add_option("--host", host, "server hostname")->default_val("localhost");
+    app.add_option("--port,-p", port, "server port")->default_val(8080);
 
-    po::variables_map vm;
-    po::store(po::parse_command_line(argc, argv, desc), vm);
-    po::notify(vm);
-
-    if (vm.count("help")) {
-        cout << desc << "\n";
-        exit(0);
+    try {
+        app.parse(argc, argv);
+    } catch (const CLI::ParseError& e) {
+        exit(app.exit(e));  // --help exits 0; other errors exit non-zero
     }
-    return vm;
 }
 
 // -----------------------------------------------------------------------------
-// 2. Boost.JSON
+// 2. nlohmann/json – parse, inspect, and serialize JSON
 // -----------------------------------------------------------------------------
 static void demo_json() {
-    cout << "\n--- Boost.JSON ---\n";
+    cout << "\n--- nlohmann/json ---\n";
 
     // Parse
     const string raw = R"({
@@ -105,34 +92,33 @@ static void demo_json() {
         "version": 3,
         "features": ["async", "json", "http"]
     })";
-    json::value doc = json::parse(raw);
-    const json::object& obj = doc.as_object();
+    const json doc = json::parse(raw);
 
-    cout << "service : " << obj.at("service").as_string() << "\n";
-    cout << "version : " << obj.at("version").as_int64()  << "\n";
+    cout << "service : " << doc["service"].get<string>() << "\n";
+    cout << "version : " << doc["version"].get<int>()    << "\n";
     cout << "features: ";
-    for (const auto& f : obj.at("features").as_array()) {
-        cout << f.as_string() << " ";
+    for (const auto& f : doc["features"]) {
+        cout << f.get<string>() << " ";
     }
     cout << "\n";
 
     // Serialize
-    json::object response;
+    json response;
     response["status"] = "ok";
     response["result"] = add(6, 7);     // calls production code from math_utils
-    cout << "serialized: " << json::serialize(response) << "\n";
+    cout << "serialized: " << response.dump() << "\n";
 }
 
 // -----------------------------------------------------------------------------
-// 3. Boost.Asio – async timer
+// 3. Asio (standalone) – async timer
 // -----------------------------------------------------------------------------
 static void demo_asio_timer() {
-    cout << "\n--- Boost.Asio: async timer ---\n";
+    cout << "\n--- Asio (standalone): async timer ---\n";
 
     net::io_context ioc;
     net::steady_timer timer(ioc, chrono::milliseconds(200));
 
-    timer.async_wait([](const boost::system::error_code& ec) {
+    timer.async_wait([](const asio::error_code& ec) {
         if (!ec) {
             cout << "timer fired (200 ms)\n";
         }
@@ -143,41 +129,23 @@ static void demo_asio_timer() {
 }
 
 // -----------------------------------------------------------------------------
-// 4. Boost.Beast – synchronous HTTP GET  (skipped on WebAssembly: no raw TCP)
+// 4. cpp-httplib – synchronous HTTP GET  (skipped on WebAssembly: no raw TCP)
 // -----------------------------------------------------------------------------
 #ifndef __EMSCRIPTEN__
-static void demo_beast_http() {
-    cout << "\n--- Boost.Beast: HTTP GET example.com ---\n";
-    try {
-        net::io_context ioc;
-        tcp::resolver   resolver(ioc);
-        beast::tcp_stream stream(ioc);
+static void demo_http() {
+    cout << "\n--- cpp-httplib: HTTP GET example.com ---\n";
 
-        // Resolve and connect
-        stream.connect(resolver.resolve("example.com", "80"));
+    httplib::Client cli("http://example.com");
+    cli.set_connection_timeout(5);
+    cli.set_read_timeout(5);
 
-        // Build the request
-        http::request<http::string_body> req{http::verb::get, "/", 11};
-        req.set(http::field::host,       "example.com");
-        req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
-        req.set(http::field::connection, "close");
-        http::write(stream, req);
-
-        // Read the response
-        beast::flat_buffer                  buf;
-        http::response<http::dynamic_body>  res;
-        http::read(stream, buf, res);
-
-        cout << "status : " << res.result_int() << " " << res.reason() << "\n";
-        cout << "body   : "
-                  << beast::buffers_to_string(res.body().data()).size()
-                  << " bytes\n";
-
-        beast::error_code ec;
-        stream.socket().shutdown(tcp::socket::shutdown_both, ec);
-
-    } catch (const exception& e) {
-        cout << "skipped (no network or DNS): " << e.what() << "\n";
+    const auto res = cli.Get("/");
+    if (res) {
+        cout << "status : " << res->status << "\n";
+        cout << "body   : " << res->body.size() << " bytes\n";
+    } else {
+        cout << "skipped (no network): "
+             << httplib::to_string(res.error()) << "\n";
     }
 }
 #endif // !__EMSCRIPTEN__
@@ -309,18 +277,15 @@ static void demo_embedded_resource() {
     const string_view raw = get_embedded_sample_json();
     cout << "embedded size  : " << raw.size() << " bytes\n";
 
-    // Parse the embedded bytes as JSON using Boost.JSON (already linked in).
-    const json::value  doc = json::parse(raw);
-    const json::object& obj = doc.as_object();
+    // Parse the embedded bytes as JSON using nlohmann/json (already linked in).
+    const json doc = json::parse(raw.begin(), raw.end());
 
-    cout << "application    : " << obj.at("application").as_string() << "\n";
-    cout << "description    : " << obj.at("description").as_string() << "\n";
+    cout << "application    : " << doc["application"].get<string>() << "\n";
+    cout << "description    : " << doc["description"].get<string>() << "\n";
 
-    const json::array& features =
-        obj.at("settings").as_object().at("features").as_array();
     cout << "features       : ";
-    for (const auto& f : features) {
-        cout << f.as_string() << " ";
+    for (const auto& f : doc["settings"]["features"]) {
+        cout << f.get<string>() << " ";
     }
     cout << "\n";
 }
@@ -350,121 +315,117 @@ static void demo_spdlog() {
 }
 
 // -----------------------------------------------------------------------------
-// 11. Boost.URL – parse, inspect, and mutate URIs
+// 11. ada-url – parse, inspect, and mutate URIs (WHATWG-compliant)
 // -----------------------------------------------------------------------------
-static void demo_boost_url() {
-    cout << "\n--- Boost.URL ---\n";
-    namespace urls = boost::urls;
+static void demo_url() {
+    cout << "\n--- ada-url ---\n";
 
-    // Parse to an immutable view (zero-copy; input string must remain alive)
-    const urls::url_view uv = urls::parse_uri(
-        "https://api.example.com:8443/v2/users?page=1&limit=50#results").value();
+    // Parse to a mutable url object
+    auto result = ada::parse(
+        "https://api.example.com:8443/v2/users?page=1&limit=50#results");
+    if (!result) {
+        cout << "parse failed\n";
+        return;
+    }
 
-    cout << "scheme   : " << uv.scheme()   << "\n";
-    cout << "host     : " << uv.host()     << "\n";
-    cout << "port     : " << uv.port()     << "\n";
-    cout << "path     : " << uv.path()     << "\n";
-    cout << "query    : " << uv.query()    << "\n";
-    cout << "fragment : " << uv.fragment() << "\n";
+    // get_protocol() includes the trailing colon ("https:")
+    // get_search()   includes the leading "?" ("?page=1&limit=50")
+    // get_hash()     includes the leading "#" ("#results")
+    cout << "scheme   : " << result->get_protocol() << "\n";
+    cout << "host     : " << result->get_hostname()  << "\n";
+    cout << "port     : " << result->get_port()      << "\n";
+    cout << "path     : " << result->get_pathname()  << "\n";
+    cout << "query    : " << result->get_search()    << "\n";
+    cout << "fragment : " << result->get_hash()      << "\n";
 
-    // Mutable url for building / modifying
-    urls::url u(uv);
-    u.set_path("/v3/users");
-    u.set_query("page=2&limit=25");
-    cout << "modified : " << u << "\n";
+    // Mutate in place
+    result->set_pathname("/v3/users");
+    result->set_search("page=2&limit=25");
+    cout << "modified : " << result->get_href() << "\n";
 }
 
 // -----------------------------------------------------------------------------
-// 12. Boost.UUID – random (v4) and name-based (v5) UUIDs
+// 12. stduuid – random (v4) and name-based (v5) UUIDs
 // -----------------------------------------------------------------------------
-static void demo_boost_uuid() {
-    cout << "\n--- Boost.UUID ---\n";
+static void demo_uuid() {
+    cout << "\n--- stduuid ---\n";
 
-    // v4: cryptographically random
-    boost::uuids::random_generator rgen;
-    const auto id1 = rgen();
-    const auto id2 = rgen();
-    cout << "random uuid 1  : " << id1 << "\n";
-    cout << "random uuid 2  : " << id2 << "\n";
+    // v4: uses OS-native source (CoCreateGuid on Windows, uuid_generate on
+    // Linux/macOS). This works reliably on all supported platforms including
+    // Windows XP x64 and Vista.
+    uuids::uuid_system_generator sys_gen;
+    const auto id1 = sys_gen();
+    const auto id2 = sys_gen();
+    cout << "random uuid 1  : " << uuids::to_string(id1) << "\n";
+    cout << "random uuid 2  : " << uuids::to_string(id2) << "\n";
     cout << "are equal      : " << (id1 == id2 ? "yes" : "no") << "\n";
 
     // v5: name-based (SHA-1) – identical input always yields identical UUID
-    boost::uuids::name_generator_sha1 ngen(boost::uuids::ns::url());
-    const auto id3 = ngen("https://example.com");
-    const auto id4 = ngen("https://example.com");
-    cout << "name-based     : " << id3 << "\n";
+    uuids::uuid_name_generator name_gen(uuids::uuid_namespace_url);
+    const auto id3 = name_gen("https://example.com");
+    const auto id4 = name_gen("https://example.com");
+    cout << "name-based     : " << uuids::to_string(id3) << "\n";
     cout << "reproducible   : " << (id3 == id4 ? "yes" : "no") << "\n";
 
     // String round-trip
-    const string str = boost::uuids::to_string(id1);
-    const auto        id5 = boost::uuids::string_generator()(str);
+    const string str = uuids::to_string(id1);
+    const auto   parsed = uuids::uuid::from_string(str);
     cout << "string form    : " << str << "\n";
-    cout << "round-trip ok  : " << (id1 == id5 ? "yes" : "no") << "\n";
+    cout << "round-trip ok  : " << (parsed && *parsed == id1 ? "yes" : "no") << "\n";
 }
 
 // -----------------------------------------------------------------------------
-// 13. Boost.Process v2  (skipped on WebAssembly: no process spawning)
+// 13. reproc  (skipped on WebAssembly: no process spawning)
 // -----------------------------------------------------------------------------
 #ifndef __EMSCRIPTEN__
-static void demo_boost_process() {
-    cout << "\n--- Boost.Process v2 ---\n";
-    namespace bp = boost::process::v2;
+static void demo_process() {
+    cout << "\n--- reproc: child process ---\n";
 
-    // cmake must be installed on any machine that can build this project.
-    const auto cmake_exe = bp::environment::find_executable("cmake");
-    if (cmake_exe.empty()) {
-        cout << "cmake not found in PATH; skipping\n";
+    // cmake is guaranteed to be on PATH on any machine that can build this
+    // project, making it a reliable demo target.
+    reproc::options options;
+    options.redirect.out.type = reproc::redirect::pipe;
+
+    reproc::process proc;
+    auto ec = proc.start({"cmake", "--version"}, options);
+    if (ec) {
+        cout << "cmake not found in PATH; skipping (" << ec.message() << ")\n";
         return;
     }
-    cout << "cmake path     : " << cmake_exe.string() << "\n";
 
-    net::io_context ioc;
-    boost::asio::readable_pipe rp{ioc};
-
-    // Redirect child stdout to the pipe; stdin and stderr are inherited.
-    bp::process_stdio stdio;
-    stdio.out = rp;
-
-    bp::process proc(ioc, cmake_exe, {"--version"}, stdio);
-
-    // Synchronous read until the child closes its end of the pipe (EOF).
     string output;
-    boost::system::error_code ec;
-    boost::asio::read(rp, boost::asio::dynamic_buffer(output), ec);
-    // ec == boost::asio::error::eof here – expected, not an error.
+    reproc::drain(proc, reproc::sink::string(output), reproc::sink::null);
 
-    const int code = proc.wait();
+    auto [exit_code, wait_ec] = proc.wait(reproc::infinite);
 
     // Print only the first line ("cmake version X.Y.Z")
     const auto nl = output.find('\n');
     cout << "output         : "
-              << output.substr(0, nl != string::npos ? nl : output.size())
-              << "\n";
-    cout << "exit code      : " << code << "\n";
+         << output.substr(0, nl != string::npos ? nl : output.size()) << "\n";
+    cout << "exit code      : " << exit_code << "\n";
 }
 #endif // !__EMSCRIPTEN__
 
 // -----------------------------------------------------------------------------
-// 14. Boost.Stacktrace  (skipped on WebAssembly: no stack unwinding support)
+// 14. cpptrace  (skipped on WebAssembly: stack unwinding not supported)
 // -----------------------------------------------------------------------------
 #ifndef __EMSCRIPTEN__
 static void demo_stacktrace() {
-    cout << "\n--- Boost.Stacktrace ---\n";
+    cout << "\n--- cpptrace ---\n";
 
-    // Captures the call stack at this point.
-    // Built with BOOST_STACKTRACE_USE_BASIC so no debug-info files are needed;
-    // each frame shows a raw address.  For human-readable names rebuild with:
-    //   Linux  : Boost::stacktrace_addr2line + BOOST_STACKTRACE_USE_ADDR2LINE
-    //   Windows: Boost::stacktrace_windbg    + BOOST_STACKTRACE_USE_WINDBG
-    const boost::stacktrace::stacktrace st;
-    cout << "frames captured: " << st.size() << "\n";
+    // Captures the current call stack. Symbol resolution depends on the
+    // platform and build type:
+    //   Debug builds   : full function names and line numbers
+    //   Release builds : addresses only (or names if the binary is not stripped)
+    const auto trace = cpptrace::generate_trace();
+    cout << "frames captured: " << trace.frames.size() << "\n";
 
-    const size_t show = min(st.size(), size_t{5});
+    const size_t show = min(trace.frames.size(), size_t{5});
     for (size_t i = 0; i < show; ++i) {
-        cout << "  [" << i << "] " << st[i] << "\n";
+        cout << "  [" << i << "] " << trace.frames[i].symbol << "\n";
     }
-    if (st.size() > show) {
-        cout << "  ... (" << (st.size() - show) << " more frames)\n";
+    if (trace.frames.size() > show) {
+        cout << "  ... (" << (trace.frames.size() - show) << " more frames)\n";
     }
 }
 #endif // !__EMSCRIPTEN__
@@ -544,14 +505,15 @@ int main(int argc, char* argv[]) {
     cout << "platform: unknown\n";
 #endif
 
-    const auto vm = parse_options(argc, argv);
-    cout << "host: " << vm["host"].as<string>()
-              << "  port: " << vm["port"].as<int>() << "\n";
+    string host = "localhost";
+    int    port = 8080;
+    parse_options(argc, argv, host, port);
+    cout << "host: " << host << "  port: " << port << "\n";
 
     demo_json();
     demo_asio_timer();
 #ifndef __EMSCRIPTEN__
-    demo_beast_http();
+    demo_http();
 #endif
     demo_filesystem();
     demo_regex();
@@ -561,10 +523,10 @@ int main(int argc, char* argv[]) {
     demo_fp();
     demo_embedded_resource();
     demo_spdlog();
-    demo_boost_url();
-    demo_boost_uuid();
+    demo_url();
+    demo_uuid();
 #ifndef __EMSCRIPTEN__
-    demo_boost_process();
+    demo_process();
     demo_stacktrace();
 #endif
     demo_date();

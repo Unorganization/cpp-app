@@ -18,7 +18,7 @@ The primary goal of this project is to provide a reliable base for C++ tools tha
 
 1.  **Maximum Binary Self-Containment:** Every release binary is statically linked. Users can download a single file, extract it, and run it. No "Redistributable" installers or package managers are required for the end-user.
 2.  **Cross-Platform Consistency:** By enforcing **Clang** and **vcpkg** across Windows, macOS, and Linux, we ensure that the same code behaves identically across all targets.
-3.  **Modern C++ Foundation:** Built on **C++17**, integrating high-quality libraries like **Boost** (Asio, Beast, JSON, Filesystem, Program Options) and **Google Test**, providing a production-ready starting point.
+3.  **Modern C++ Foundation:** Built on **C++17**, integrating high-quality libraries like **standalone Asio**, **nlohmann/json**, **CLI11**, **ada-url**, **cpptrace**, and **Google Test**, providing a production-ready starting point.
 4.  **Developer Autonomy:** The build system is designed to be modified easily. Renaming the project or adding new source files is a one-line change.
 
 ---
@@ -355,8 +355,9 @@ The binary is at `build/bin/cpp_app`.
 > run: `ctest --test-dir build --output-on-failure`
 
 > **vcpkg first run:** The first configure will download and compile all dependencies
-> (including Boost) from source. This takes several minutes. Subsequent builds are
-> fast because vcpkg caches the compiled packages.
+> from source. Most libraries in this project are header-only (asio, CLI11, nlohmann/json,
+> stduuid, spdlog) so the first run is fast — typically under 5 minutes. Only ada-url,
+> reproc, cpptrace, and GoogleTest require compilation. Subsequent builds reuse the cache.
 
 ---
 
@@ -464,64 +465,57 @@ That's all. The new module will be compiled and linked into the executable.
 
 ---
 
-## Adding Boost Libraries
+## Adding Libraries
 
-Boost components are managed in two places: `vcpkg.json` (which packages to install) and `CMakeLists.txt` (how to link them). Both files must be updated together.
+Libraries are managed in two places: `vcpkg.json` (which packages to install) and `CMakeLists.txt` (how to link them). Both files must be updated together.
 
 ### Step 1 — Find the vcpkg package name
 
-Each Boost library is its own vcpkg package named `boost-<library>`.  
-Common examples:
+Search the vcpkg registry:
 
-| Boost library | vcpkg package name |
-|---|---|
-| Boost.Filesystem | `boost-filesystem` |
-| Boost.Regex | `boost-regex` |
-| Boost.Asio | `boost-asio` |
-| Boost.Json | `boost-json` |
-| Boost.Program_options | `boost-program-options` |
-| Boost.Thread | `boost-thread` |
-| Boost.Beast (HTTP/WebSocket) | `boost-beast` |
+```bash
+vcpkg search <keyword>
+```
 
-To search for others: `vcpkg search boost`
+Prefer header-only libraries when possible — they have zero compile time. The vcpkg package page shows the CMake target name you will need in Step 3.
 
 ### Step 2 — Add the package to `vcpkg.json`
 
-Open `vcpkg.json` at the root of the `cpp-app/` folder and add the package name to the `"dependencies"` array:
+Open `vcpkg.json` at the root of the `cpp-app/` folder and add the package name to the `"dependencies"` array. If a library requires OS features unavailable in the browser sandbox, add a platform filter:
 
 ```json
 {
   "name": "cpp-app",
   "version": "1.0.0",
   "dependencies": [
-    "boost-filesystem",
-    "boost-regex"
+    "some-header-only-lib",
+    { "name": "some-os-specific-lib", "platform": "!wasm32" }
   ]
 }
 ```
 
 ### Step 3 — Update `CMakeLists.txt`
 
-Find the `find_package` line for Boost and add your new component to the `COMPONENTS` list, then add the corresponding `Boost::<component>` target to `target_link_libraries`.
+Add a `find_package` call and the CMake target to `target_link_libraries`. The exact target name is shown on the vcpkg package's usage page.
 
-**Before:**
+**Example (header-only library):**
 ```cmake
-find_package(Boost REQUIRED COMPONENTS filesystem)
-target_link_libraries(cpp_app PRIVATE Boost::filesystem)
+find_package(SomeLib CONFIG REQUIRED)
+target_link_libraries(${PROJECT_NAME}_lib PUBLIC SomeLib::SomeLib)
 ```
 
-**After:**
+**Example (OS-only library, excluded from WASM):**
 ```cmake
-find_package(Boost REQUIRED COMPONENTS filesystem regex)
-target_link_libraries(cpp_app PRIVATE Boost::filesystem Boost::regex)
+if(NOT EMSCRIPTEN)
+    find_package(SomeOSLib CONFIG REQUIRED)
+    target_link_libraries(${PROJECT_NAME}_lib PUBLIC SomeOSLib::SomeOSLib)
+endif()
 ```
-
-The CMake target name is always `Boost::` followed by the component name in lowercase (e.g. `Boost::regex`, `Boost::thread`, `Boost::program_options`).
 
 ### Step 4 — Include the header in your source file
 
 ```cpp
-#include <boost/regex.hpp>   // example
+#include <some_lib/header.hpp>
 ```
 
 ### Step 5 — Re-run CMake
@@ -625,7 +619,7 @@ cargo install ast-grep
 
 **Example — find all uses of a type across the codebase:**
 ```bash
-sg --pattern 'boost::system::error_code' --lang cpp src/
+sg --pattern 'asio::error_code' --lang cpp src/
 ```
 
 **Example — rename a function across all C++ files:**

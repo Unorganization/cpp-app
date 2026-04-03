@@ -66,64 +66,55 @@ target_include_directories(${PROJECT_NAME}_lib PUBLIC
 # ---------------------------------------------------------------------------
 # Dependencies
 #
-# Boost.Asio and Boost.Beast are header-only; they appear as link targets
-# (Boost::asio, Boost::beast) to let CMake propagate their include paths and
-# any platform-specific system library requirements (e.g. Winsock on Windows,
-# pthreads on Linux).
+# All third-party libraries are managed via vcpkg (see vcpkg.json).
 #
-# Boost.JSON and Boost.ProgramOptions have compiled object files and must be
-# listed in COMPONENTS so CMake locates and links the right .lib / .a files.
+# Header-only libraries (asio, CLI11, nlohmann/json, stduuid, spdlog) require
+# no compiled object files; CMake propagates their include paths automatically.
+#
+# cpp-httplib, reproc, and cpptrace are not available for wasm32-emscripten
+# (they require OS networking / process / stack-unwinding support).
 #
 # std::filesystem, std::regex, std::thread, and std::future are part of the
 # C++17 standard – no find_package required.
-#
-# To add more Boost libraries:
-#   1. Add the vcpkg package name to vcpkg.json  (e.g. "boost-regex")
-#   2. If it is a compiled library, add its component name to COMPONENTS below
-#      (e.g. regex) and add Boost::<component> to target_link_libraries.
-#   3. If it is header-only, just add Boost::<name> to target_link_libraries.
 # ---------------------------------------------------------------------------
-# Boost.Beast, Boost.Process v2, and Boost.Stacktrace are not available for
-# wasm32-emscripten (they require OS networking / process / unwind support).
-if(EMSCRIPTEN)
-    find_package(Boost REQUIRED COMPONENTS json program_options url)
-else()
-    find_package(Boost REQUIRED COMPONENTS json program_options url stacktrace_basic)
-endif()
-find_package(Threads REQUIRED)
-find_package(spdlog  CONFIG REQUIRED)
-find_package(date    CONFIG REQUIRED)
-find_package(csv-parser CONFIG REQUIRED)
+find_package(asio          CONFIG REQUIRED)
+find_package(CLI11         CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
+find_package(ada           CONFIG REQUIRED)
+find_package(stduuid       CONFIG REQUIRED)
+find_package(Threads       REQUIRED)
+find_package(spdlog        CONFIG REQUIRED)
+find_package(date          CONFIG REQUIRED)
+find_package(csv-parser    CONFIG REQUIRED)
 
 target_link_libraries(${PROJECT_NAME}_lib PUBLIC
-    Boost::asio             # header-only; handles Winsock on Windows
-    Boost::json             # compiled
-    Boost::program_options  # compiled
-    Boost::url              # compiled; URL parsing and manipulation
-    Boost::uuid             # header-only; UUID generation
-    Threads::Threads        # pthreads on Linux, built-in on Windows/macOS
-    spdlog::spdlog_header_only  # header-only; no compiled spdlog library needed
-    date::date              # Howard Hinnant's date/calendar library (no TZ data)
-    csv::csv                # Vince's CSV parser
+    asio::asio                   # standalone Asio (header-only; handles Winsock on Windows)
+    CLI11::CLI11                 # header-only; command-line argument parsing
+    nlohmann_json::nlohmann_json # header-only; JSON parse and serialize
+    ada::ada                     # WHATWG-compliant URL parsing
+    stduuid                      # header-only; UUID generation
+    Threads::Threads             # pthreads on Linux, built-in on Windows/macOS
+    spdlog::spdlog_header_only   # header-only; structured logging
+    date::date                   # Howard Hinnant's date/calendar library (no TZ data)
+    csv::csv                     # Vince's CSV parser
 )
+
+# Standalone Asio must not look for Boost headers.
+target_compile_definitions(${PROJECT_NAME}_lib PUBLIC ASIO_STANDALONE)
 
 # Libraries that require OS capabilities unavailable in the browser sandbox.
 if(NOT EMSCRIPTEN)
+    find_package(httplib   CONFIG REQUIRED)
+    find_package(reproc++  CONFIG REQUIRED)
+    find_package(cpptrace  CONFIG REQUIRED)
     target_link_libraries(${PROJECT_NAME}_lib PUBLIC
-        Boost::beast            # header-only; HTTP/WebSocket (needs TCP sockets)
-        Boost::process          # header-only; child-process management (v2)
-        Boost::stacktrace_basic # basic stack-capture (no debug symbols needed)
-        ${CMAKE_DL_LIBS}        # -ldl on Linux; needed by stacktrace_basic
+        httplib::httplib        # header-only; HTTP client (plain TCP)
+        reproc++::reproc++      # child-process management
+        cpptrace::cpptrace      # stack trace capture
+        ${CMAKE_DL_LIBS}        # -ldl on Linux; needed by cpptrace
     )
-    # Boost.Stacktrace: raw-address backend, works in Debug and Release.
-    # To get symbolised names:
-    #   Linux  : Boost::stacktrace_addr2line + BOOST_STACKTRACE_USE_ADDR2LINE
-    #   Windows: Boost::stacktrace_windbg    + BOOST_STACKTRACE_USE_WINDBG
-    target_compile_definitions(${PROJECT_NAME}_lib PUBLIC BOOST_STACKTRACE_USE_BASIC)
 endif()
 
-# Tell Boost.Asio which minimum Windows API version to target.
-# 0x0A00 = Windows 10. Only relevant on Windows; ignored on other platforms.
 if(WIN32)
     # Target Windows XP x64 / Server 2003 (0x0502) — the earliest AMD64 Windows.
     # This is intentionally conservative: if code ever calls a newer Win32 API,
@@ -142,23 +133,21 @@ endif()
 # ---------------------------------------------------------------------------
 # Precompiled header (PCH)
 # Listed headers are compiled once and reused by every .cpp in the library,
-# which speeds up incremental builds when headers are large (e.g. Boost).
+# which speeds up incremental builds when headers are large.
 #
 # Add any header that is included by most of your source files.
 # ---------------------------------------------------------------------------
-# boost/beast.hpp is large and not available for wasm32-emscripten.
+# httplib.h is large and not available for wasm32-emscripten.
 set(_pch_headers
     <iostream>
     <string>
     <vector>
-    <boost/asio.hpp>
-    <boost/json.hpp>
-    <boost/program_options.hpp>
-    <boost/url.hpp>
+    <asio.hpp>
+    <nlohmann/json.hpp>
     <spdlog/spdlog.h>
 )
 if(NOT EMSCRIPTEN)
-    list(APPEND _pch_headers <boost/beast.hpp>)
+    list(APPEND _pch_headers <httplib.h>)
 endif()
 target_precompile_headers(${PROJECT_NAME}_lib PRIVATE ${_pch_headers})
 unset(_pch_headers)
