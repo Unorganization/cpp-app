@@ -141,11 +141,11 @@ everywhere.
   ```
 
 **Node.js** *(optional — only needed for WebAssembly smoke testing)*
-- Detect: `node --version`
+- Detect: `node --version` — any version works; Node.js is used only as a WebAssembly runtime to run `cpp_app.js` after an Emscripten build.
 - Install: Download from https://nodejs.org or `winget install OpenJS.NodeJS`
 
 **ast-grep** *(optional — recommended for code search and refactoring)*
-- Detect: `sg --version`
+- Detect: `sg --version` — any version works; this is a developer convenience tool not involved in the build.
 - Install: `npm install -g @ast-grep/cli` (requires Node.js)
 
 **Configure and build** (PowerShell)
@@ -208,11 +208,11 @@ ctest --test-dir build -C Release --output-on-failure
   ```
 
 **Node.js** *(optional — only needed for WebAssembly smoke testing)*
-- Detect: `node --version`
+- Detect: `node --version` — any version works; Node.js is used only as a WebAssembly runtime to run `cpp_app.js` after an Emscripten build.
 - Install: `brew install node`
 
 **ast-grep** *(optional — recommended for code search and refactoring)*
-- Detect: `sg --version`
+- Detect: `sg --version` — any version works; this is a developer convenience tool not involved in the build.
 - Install: `brew install ast-grep`
 
 **Configure and build**
@@ -272,15 +272,15 @@ ctest --test-dir build --output-on-failure
   ```
 
 **Node.js** *(optional — only needed for WebAssembly smoke testing)*
-- Detect: `node --version`
+- Detect: `node --version` — any version works; Node.js is used only as a WebAssembly runtime to run `cpp_app.js` after an Emscripten build.
 - Install: `sudo apt-get install -y nodejs`
 
 **wine64** *(optional — to run the Wine compatibility test locally)*
-- Detect: `wine64 --version`
+- Detect: `wine64 --version` — any version works.
 - Install: `sudo apt-get install -y wine64`
 
 **ast-grep** *(optional — recommended for code search and refactoring)*
-- Detect: `sg --version`
+- Detect: `sg --version` — any version works; this is a developer convenience tool not involved in the build.
 - Install: `npm install -g @ast-grep/cli` (requires Node.js) or `cargo install ast-grep` (requires Rust)
 
 **Configure and build**
