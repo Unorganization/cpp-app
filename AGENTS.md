@@ -26,6 +26,12 @@ The following operations may be performed without asking the user for permission
 Operations not listed here fall back to the agent's default behavior for the current
 session (which may be fully autonomous, interactive, or anything in between).
 
+## Prohibited Operations (Never Do Without Explicit Instruction)
+
+- **Never push to any remote.** Commit locally and stop. The user will push, or will
+  explicitly say to push. This applies to every branch and every remote, including
+  `origin`.
+
 ---
 
 ## ⚠️ Handling Conflicts Between User Instructions and This File
