@@ -11,16 +11,18 @@ and maintaining it.
 
 ---
 
-## The Three Companion Files
+## The Core Companion Files
 
-Every repository following this standard maintains exactly three companion files
-at the repository root:
+Every repository following this standard maintains at least three companion files
+at the repository root. These are the *starting points* — each may link out to
+additional files (sub-architecture docs, per-module READMEs, deeper guides), but
+these three are always present and always current:
 
-| File | Audience | Purpose |
+| File | Primary audience | Purpose |
 |---|---|---|
 | `README.md` | Anyone who finds the repo | What it is, how to build it, how to use it |
 | `ARCHITECTURE.md` | Engineers and agents working on the code | Why it is built the way it is |
-| `AGENTS.md` | AI coding agents | Rules and constraints agents must follow |
+| `AGENTS.md` | AI coding agents (and human contributors) | Rules and constraints that must not be violated |
 
 These files are the single source of truth for their respective concerns. When
 they conflict with each other or with the code, the code wins — but the files
@@ -88,9 +90,13 @@ constraints are that must not be violated.
 
 ---
 
-## `AGENTS.md` — The Agent Rulebook
+## `AGENTS.md` — The Rulebook
 
-**Audience:** AI coding agents (Claude, Copilot, Cursor, ChatGPT, etc.).
+**Audience:** AI coding agents primarily, but equally applicable to any human
+contributor. The rules here are project invariants — things no one should violate
+regardless of how the code is being written. Naming this file `AGENTS.md` ensures
+AI tools that automatically look for agent instruction files (GitHub Copilot,
+Claude, Cursor, etc.) will find and respect it.
 
 **Purpose:** Tell agents what they must and must not do when working on this
 specific repository. This file contains project-specific rules that override or

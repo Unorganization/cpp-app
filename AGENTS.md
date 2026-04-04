@@ -3,8 +3,9 @@
 This repository follows the agent standards defined in
 [`AGENT_STANDARDS.md`](AGENT_STANDARDS.md).
 
-This file exists specifically to inform AI coding assistants (Claude, Copilot, Cursor,
-ChatGPT, etc.) of the non-negotiable design principles for this project.
+This file defines the non-negotiable design principles for this project. It is
+written with AI coding agents as the primary audience, but applies equally to
+human contributors — these are project invariants, not AI-specific rules.
 
 ## ⚠️ MANDATORY: Update Documentation With Every Change
 

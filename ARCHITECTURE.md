@@ -4,31 +4,20 @@ This document explains the technical decisions, architectural patterns, and proj
 
 ---
 
-## 1. Project Structure & Manifest
+## 1. Project Structure
 
-The repository is organized into a modular structure that separates production logic, main entry points, and tests.
+Architecturally significant files and directories:
 
 ```text
 cpp-app/
-├── .github/workflows/
-│   └── build.yml          # Multi-platform CI/CD (Windows, Linux, macOS, Android)
-├── data/
-│   └── sample.json        # Embedded at link time via llvm-objcopy
+├── .github/workflows/build.yml  # Multi-platform CI/CD (Windows, Linux, macOS, Android, WASM)
+├── data/sample.json             # Embedded at link time via llvm-objcopy (see §4)
 ├── src/
-│   ├── main.cpp           # Demo entry point (16 library/feature sections)
-│   ├── math_utils.cpp     # Production logic (addition example)
-│   ├── math_utils.h
-│   ├── logger.h           # setup_logger() – multi-sink spdlog utility
-│   ├── embedded_resource.cpp  # Accesses linker symbols from the embedded object
-│   └── embedded_resource.h   # get_embedded_sample_json() API
-├── tests/
-│   ├── CMakeLists.txt     # Test target configuration
-│   └── test_math_utils.cpp # GTest cases for math_utils
-├── CMakeLists.txt         # Root build configuration
-├── vcpkg.json             # Dependency manifest (third-party libraries, GTest)
-├── README.md              # User documentation
-├── AGENTS.md              # AI agent guidelines
-└── ARCHITECTURE.md        # Technical specification (this file)
+│   ├── embedded_resource.cpp/h  # Accesses linker symbols from the embedded object
+│   └── logger.h                 # setup_logger() — multi-sink spdlog utility
+├── scripts/verify-standalone/   # Per-platform scripts to verify binary self-containment
+├── CMakeLists.txt               # Root build configuration
+└── vcpkg.json                   # Dependency manifest
 ```
 
 ---
