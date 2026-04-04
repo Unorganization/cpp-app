@@ -3,10 +3,13 @@
 A "batteries-included" template for building cross-platform C++ console applications that are **fully self-contained** (statically linked).
 
 > **For AI agents and contributors:** Read [`AGENTS.md`](AGENTS.md) and
-> [`ARCHITECTURE.md`](ARCHITECTURE.md) before making any changes. They document the
+> [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) before making any changes. They document the
 > self-containment design principles, architectural rationale, and the requirement that
 > **all markdown documentation must be updated** to reflect any changes made to the
 > codebase or build system.
+>
+> Additional documentation is in the [`docs/`](docs/) folder:
+> [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · [`docs/AGENT_STANDARDS.md`](docs/AGENT_STANDARDS.md) · [`docs/TEMPLATE_WORKFLOW.md`](docs/TEMPLATE_WORKFLOW.md)
 
 ---
 
@@ -642,7 +645,7 @@ before pushing:
    *Running Unit Tests* above). All tests must pass.
 3. **Update documentation.** If your change affects build steps, supported platforms,
    library list, CI jobs, minimum OS versions, or any other documented behaviour:
-   update `README.md`, `ARCHITECTURE.md`, and/or `AGENTS.md` accordingly. Do not leave
+   update `README.md`, `docs/ARCHITECTURE.md`, and/or `AGENTS.md` accordingly. Do not leave
    documentation stale.
 4. **Let CI be the cross-platform gate.** Push to `main` — the pipeline runs Linux
    build + unit tests automatically. When you want full cross-platform validation,

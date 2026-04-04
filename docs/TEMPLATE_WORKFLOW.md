@@ -92,7 +92,7 @@ Make these changes before writing any tool-specific code:
 | `CMakeLists.txt` | `project(cpp_app ...)` → `project(tool_myapp1 ...)` |
 | `vcpkg.json` | `"name": "cpp-app"` → `"name": "tool-myapp1"` |
 | `README.md` | Replace with tool-specific description, setup, and usage |
-| `ARCHITECTURE.md` | Replace or trim to reflect the tool's actual design |
+| `docs/ARCHITECTURE.md` | Replace or trim to reflect the tool's actual design |
 | `src/main.cpp` | Replace demo content with tool entry point |
 
 Commit these changes:
@@ -200,7 +200,7 @@ Expected conflict sites and how to handle them:
 | `README.md` | Entire file | Handled by `merge=ours` automatically |
 | `CMakeLists.txt` | `project()` name, `vcpkg.json` dependencies block | Keep your project name; review dependency changes carefully and integrate selectively |
 | `AGENTS.md` | New rules added to both sides | Read both versions; combine manually |
-| `ARCHITECTURE.md` | Structural changes | Review and integrate manually |
+| `docs/ARCHITECTURE.md` | Structural changes | Review and integrate manually |
 | `.github/workflows/build.yml` | Usually none | If conflicts arise, keep the template version unless you have tool-specific CI changes |
 
 After resolving:

@@ -1,7 +1,11 @@
 # AI Agent Guidelines for cpp_app
 
-This repository follows the agent standards defined in
-[`AGENT_STANDARDS.md`](AGENT_STANDARDS.md).
+This file follows the [AGENTS.md open standard](https://agents.md/) and is
+recognized automatically by GitHub Copilot, Claude, Cursor, OpenAI Codex,
+and other AI coding agents.
+
+The project-agnostic documentation standard this repository uses is defined in
+[`docs/AGENT_STANDARDS.md`](docs/AGENT_STANDARDS.md).
 
 This file defines the non-negotiable design principles for this project. It is
 written with AI coding agents as the primary audience, but applies equally to
@@ -17,7 +21,7 @@ must be checked and updated as needed:
 
 - **`README.md`**
 - **`AGENTS.md`**
-- **`ARCHITECTURE.md`**
+- **`ARCHITECTURE.md`** (in `docs/`)
 
 Do not wait to be asked. Do not skip this step. A commit that changes behaviour
 without updating the relevant documentation is incomplete.
@@ -29,7 +33,7 @@ Before every commit, run through the following mentally:
 - [ ] Does `README.md` still accurately describe the build steps, supported platforms,
       and minimum versions?
 - [ ] Does `README.md` have accurate unit test instructions for every platform touched?
-- [ ] Does `ARCHITECTURE.md` still accurately describe the libraries, CI jobs, and
+- [ ] Does `docs/ARCHITECTURE.md` still accurately describe the libraries, CI jobs, and
       design decisions?
 - [ ] Does `AGENTS.md` reflect any new conventions or constraints introduced by this
       change?
@@ -39,7 +43,7 @@ Before every commit, run through the following mentally:
 ## Core Principle: Maximum Binary Self-Containment
 
 The single most important rule in this codebase is that **every release binary must be
-as self-contained as possible**. See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the
+as self-contained as possible**. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the
 detailed technical rationale behind this principle.
 
 End-users should be able to download a release archive,
