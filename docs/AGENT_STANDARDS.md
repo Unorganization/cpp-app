@@ -169,6 +169,29 @@ conflict-resolution procedure, listing the specific companion files it applies t
 
 ---
 
+## Permitted Operations
+
+An `AGENTS.md` file may explicitly grant permission for certain operations so that
+the agent does not interrupt the user's workflow with unnecessary confirmation
+requests. Permissions should be specific and scoped — granting broad permissions
+(e.g. "do anything without asking") undermines the purpose of the standard.
+
+**Recommended permissions to consider granting explicitly:**
+
+- **Anonymous web reads** — fetching public URLs for reference material, docs lookup,
+  or standards verification. Should exclude authenticated requests and writes to
+  external services.
+- **Read-only filesystem access** — reading files and directories without modification.
+- **Creating new files or folders** — adding files that do not yet exist. This is
+  generally safe to grant because no existing content is modified or deleted.
+
+Operations that are not explicitly permitted should be performed with clear
+communicated intent, even if they don't require confirmation. Irreversible operations
+(deleting files, pushing to remotes, modifying existing files outside the scope
+described by the user) should never be assumed to be permitted.
+
+---
+
 ## Referencing This Standard
 
 A repository following this standard should include the following line near the

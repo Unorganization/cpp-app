@@ -11,6 +11,25 @@ This file defines the non-negotiable design principles for this project. It is
 written with AI coding agents as the primary audience, but applies equally to
 human contributors — these are project invariants, not AI-specific rules.
 
+## Permitted Operations (No Confirmation Needed)
+
+The following operations may be performed without asking the user for permission:
+
+- **Anonymous web access** — reading public URLs to look up documentation, check
+  standards, or retrieve reference material. No authentication, no form submission,
+  no writing to external services.
+- **Read-only filesystem operations** — reading any file or directory in the
+  repository or the local machine.
+- **Creating new files or folders** — adding files and directories that do not yet
+  exist, including new source files, config files, and documentation.
+
+All other operations that modify existing files, execute processes, make network
+requests that are not anonymous reads, or interact with external services should be
+done with clear intent communicated to the user — but confirmation is not required
+unless the operation is irreversible or outside the repository.
+
+---
+
 ## ⚠️ Handling Conflicts Between User Instructions and This File
 
 When a user instruction conflicts with a rule in this file or any companion file,
