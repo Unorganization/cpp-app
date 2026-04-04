@@ -128,12 +128,15 @@ following rule, prominently placed:
 
 > Any change to source code, build configuration, CI workflows, or any other
 > file in the repository triggers a documentation check. Before committing,
-> verify that `README.md`, `ARCHITECTURE.md`, and `AGENTS.md` still accurately
-> describe the repository. Update whichever files are now inaccurate.
+> verify that all companion files still accurately describe the repository.
+> This includes every file listed in the mandatory update section of `AGENTS.md`,
+> **and any file referenced or linked from those files.** Update whichever files
+> are now inaccurate.
 
 This rule exists because AI agents are fast and thorough at implementing changes
 but will skip documentation updates unless explicitly required to make them. The
-rule must be non-optional and must list all three files by name.
+rule must be non-optional, must list all companion files by name, and must
+explicitly extend to any files those companions link to.
 
 ---
 

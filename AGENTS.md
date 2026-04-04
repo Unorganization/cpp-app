@@ -21,7 +21,16 @@ must be checked and updated as needed:
 
 - **`README.md`**
 - **`AGENTS.md`**
-- **`ARCHITECTURE.md`** (in `docs/`)
+- **`CLAUDE.md`**
+- **`docs/ARCHITECTURE.md`**
+- **`docs/AGENT_STANDARDS.md`**
+- **`docs/TEMPLATE_WORKFLOW.md`**
+- **`.github/copilot-instructions.md`**
+
+This list is not exhaustive. Any file *referenced by* or *linked from* the above
+files is also part of the documentation set and must be kept current. If a change
+makes a link, example, or description in any referenced file inaccurate, update
+that file too.
 
 Do not wait to be asked. Do not skip this step. A commit that changes behaviour
 without updating the relevant documentation is incomplete.
@@ -37,6 +46,10 @@ Before every commit, run through the following mentally:
       design decisions?
 - [ ] Does `AGENTS.md` reflect any new conventions or constraints introduced by this
       change?
+- [ ] Do `CLAUDE.md` and `.github/copilot-instructions.md` still correctly direct agents
+      to `AGENTS.md`?
+- [ ] Does `docs/TEMPLATE_WORKFLOW.md` still accurately describe the workflow for
+      creating and maintaining tool repos?
 
 ---
 
